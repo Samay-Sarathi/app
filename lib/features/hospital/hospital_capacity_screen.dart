@@ -389,7 +389,7 @@ class _CapacityTabState extends State<_CapacityTab> {
                     const SizedBox(width: 12),
                     Expanded(child: Text(entry.key, style: AppTypography.bodyS.copyWith(color: onSurface))),
                     Switch(value: entry.value, onChanged: (v) => setState(() => _equipment[entry.key] = v),
-                      activeColor: AppColors.lifelineGreen),
+                      activeTrackColor: AppColors.lifelineGreen),
                   ],
                 );
               }).toList(),
@@ -423,7 +423,224 @@ class _CapacityTabState extends State<_CapacityTab> {
 }
 
 // ── Tab 1: Incoming Trips ──
-class _IncomingTab extends StatelessWidget {
+class _IncomingTab extends StatefulWidget {
+  @override
+  State<_IncomingTab> createState() => _IncomingTabState();
+}
+
+class _IncomingTabState extends State<_IncomingTab> {
+  final Set<String> _acceptedTrips = {};
+  final Set<String> _declinedTrips = {};
+
+  void _showTripDecisionDialog(BuildContext context, dynamic trip) {
+    final sevColor = trip.severity >= 7 ? AppColors.emergencyRed : AppColors.warmOrange;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [sevColor, sevColor.withValues(alpha: 0.75)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: Column(
+                children: [
+                  const Icon(Icons.local_hospital, size: 40, color: AppColors.white),
+                  const SizedBox(height: 8),
+                  Text(
+                    '🚑 INCOMING AMBULANCE',
+                    style: AppTypography.heading3.copyWith(
+                      color: AppColors.white,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Prepare to receive patient',
+                    style: AppTypography.bodyS.copyWith(
+                      color: AppColors.white.withValues(alpha: 0.85),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Details
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  _HospitalDetailRow(
+                    icon: Icons.medical_services,
+                    label: 'Emergency Type',
+                    value: trip.incidentType.label,
+                    color: sevColor,
+                  ),
+                  const SizedBox(height: 12),
+                  _HospitalDetailRow(
+                    icon: Icons.speed,
+                    label: 'Severity',
+                    value: '${trip.severity} / 10',
+                    color: sevColor,
+                  ),
+                  if (trip.driverName != null) ...[
+                    const SizedBox(height: 12),
+                    _HospitalDetailRow(
+                      icon: Icons.local_shipping,
+                      label: 'Ambulance',
+                      value: trip.driverName!,
+                      color: AppColors.medicalBlue,
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  // Warning info
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.warmOrange.withValues(alpha: 0.08),
+                      borderRadius: AppSpacing.borderRadiusSm,
+                      border: Border.all(color: AppColors.warmOrange.withValues(alpha: 0.2)),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.info_outline, size: 16, color: AppColors.warmOrange),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Accepting will notify the driver that your hospital is ready. Declining will route the ambulance to the next available hospital.',
+                            style: AppTypography.caption.copyWith(color: AppColors.warmOrange),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Action buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.of(ctx).pop();
+                            setState(() => _declinedTrips.add(trip.id));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Row(
+                                  children: const [
+                                    Icon(Icons.info_outline, color: AppColors.white, size: 18),
+                                    SizedBox(width: 8),
+                                    Text('Patient re-routed to next hospital'),
+                                  ],
+                                ),
+                                backgroundColor: AppColors.warmOrange,
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            decoration: BoxDecoration(
+                              color: AppColors.emergencyRed.withValues(alpha: 0.1),
+                              borderRadius: AppSpacing.borderRadiusMd,
+                              border: Border.all(color: AppColors.emergencyRed.withValues(alpha: 0.3)),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.close, size: 18, color: AppColors.emergencyRed),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Decline',
+                                  style: AppTypography.bodyS.copyWith(
+                                    color: AppColors.emergencyRed,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 2,
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.of(ctx).pop();
+                            setState(() => _acceptedTrips.add(trip.id));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Row(
+                                  children: const [
+                                    Icon(Icons.check_circle, color: AppColors.white, size: 18),
+                                    SizedBox(width: 8),
+                                    Text('Patient accepted — preparing bay'),
+                                  ],
+                                ),
+                                backgroundColor: AppColors.lifelineGreen,
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [AppColors.lifelineGreen, Color(0xFF15A366)],
+                              ),
+                              borderRadius: AppSpacing.borderRadiusMd,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.lifelineGreen.withValues(alpha: 0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.check, size: 18, color: AppColors.white),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Accept Patient',
+                                  style: AppTypography.bodyS.copyWith(
+                                    color: AppColors.white,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final onSurface = Theme.of(context).colorScheme.onSurface;
@@ -438,8 +655,28 @@ class _IncomingTab extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Incoming Patients', style: AppTypography.heading2.copyWith(color: onSurface)),
-              GestureDetector(onTap: () => hp.fetchIncomingTrips(), child: const Icon(Icons.refresh, color: AppColors.medicalBlue)),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Incoming Patients', style: AppTypography.heading3.copyWith(color: onSurface)),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${hp.incomingTrips.length} ambulances en route',
+                    style: AppTypography.caption.copyWith(color: AppColors.mediumGray),
+                  ),
+                ],
+              ),
+              GestureDetector(
+                onTap: () => hp.fetchIncomingTrips(),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.medicalBlue.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.refresh, color: AppColors.medicalBlue, size: 20),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -464,69 +701,209 @@ class _IncomingTab extends StatelessWidget {
             Expanded(
               child: ListView.separated(
                 itemCount: hp.incomingTrips.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                separatorBuilder: (context, index) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
                   final trip = hp.incomingTrips[index];
                   final sevColor = trip.severity >= 7 ? AppColors.emergencyRed : AppColors.warmOrange;
+                  final isAccepted = _acceptedTrips.contains(trip.id);
+                  final isDeclined = _declinedTrips.contains(trip.id);
+
                   return Container(
-                    padding: const EdgeInsets.all(AppSpacing.spaceMd),
+                    clipBehavior: Clip.antiAlias,
                     decoration: BoxDecoration(
-                      color: cardColor, borderRadius: AppSpacing.borderRadiusLg,
-                      border: Border(left: BorderSide(color: sevColor, width: 4)),
+                      color: cardColor,
+                      borderRadius: AppSpacing.borderRadiusLg,
+                      boxShadow: [
+                        BoxShadow(
+                          color: sevColor.withValues(alpha: 0.06),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(trip.incidentType.label, style: AppTypography.bodyS.copyWith(fontWeight: FontWeight.w600, color: onSurface)),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(color: sevColor.withValues(alpha: 0.1), borderRadius: AppSpacing.borderRadiusFull),
-                              child: Text('Severity ${trip.severity}', style: AppTypography.overline.copyWith(color: sevColor)),
+                        // Gradient header
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [sevColor, sevColor.withValues(alpha: 0.7)],
                             ),
-                          ],
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 28,
+                                height: 28,
+                                decoration: BoxDecoration(
+                                  color: AppColors.white.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(Icons.local_shipping, size: 16, color: AppColors.white),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  trip.incidentType.label,
+                                  style: AppTypography.bodyS.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.white,
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: AppColors.white.withValues(alpha: 0.2),
+                                  borderRadius: AppSpacing.borderRadiusFull,
+                                ),
+                                child: Text(
+                                  'SEV ${trip.severity}',
+                                  style: AppTypography.overline.copyWith(
+                                    color: AppColors.white,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        if (trip.driverName != null) ...[
-                          const SizedBox(height: 4),
-                          Text('Driver: ${trip.driverName}', style: AppTypography.caption.copyWith(color: AppColors.mediumGray)),
-                        ],
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: SizedBox(
-                                height: 40,
-                                child: ElevatedButton(
-                                  onPressed: () => context.go('/hospital/alert'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.lifelineGreen, foregroundColor: AppColors.white,
-                                    shape: RoundedRectangleBorder(borderRadius: AppSpacing.borderRadiusSm),
-                                  ),
-                                  child: const Text('View Details', style: TextStyle(fontSize: 13)),
+
+                        // Body
+                        Padding(
+                          padding: const EdgeInsets.all(14),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (trip.driverName != null) ...[
+                                Row(
+                                  children: [
+                                    const Icon(Icons.person, size: 15, color: AppColors.medicalBlue),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Driver: ${trip.driverName}',
+                                      style: AppTypography.bodyS.copyWith(color: onSurface),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: SizedBox(
-                                height: 40,
-                                child: OutlinedButton(
-                                  onPressed: () async {
-                                    await hp.confirmArrival(trip.id);
-                                    if (context.mounted) await hp.completeTrip(trip.id);
-                                  },
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: AppColors.hospitalTeal,
-                                    side: const BorderSide(color: AppColors.hospitalTeal),
-                                    shape: RoundedRectangleBorder(borderRadius: AppSpacing.borderRadiusSm),
+                                const SizedBox(height: 6),
+                              ],
+                              Row(
+                                children: [
+                                  Icon(Icons.confirmation_number, size: 15, color: AppColors.mediumGray),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Trip: ${trip.id.substring(0, trip.id.length.clamp(0, 8))}...',
+                                    style: AppTypography.caption.copyWith(color: AppColors.mediumGray),
                                   ),
-                                  child: const Text('Patient Received', style: TextStyle(fontSize: 12)),
-                                ),
+                                ],
                               ),
-                            ),
-                          ],
+                              const SizedBox(height: 14),
+                              // Buttons
+                              if (isAccepted)
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.lifelineGreen.withValues(alpha: 0.1),
+                                    borderRadius: AppSpacing.borderRadiusSm,
+                                    border: Border.all(color: AppColors.lifelineGreen.withValues(alpha: 0.3)),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(Icons.check_circle, size: 18, color: AppColors.lifelineGreen),
+                                      const SizedBox(width: 8),
+                                      Text('Accepted — Preparing Bay',
+                                          style: AppTypography.bodyS.copyWith(color: AppColors.lifelineGreen, fontWeight: FontWeight.w600)),
+                                      const Spacer(),
+                                      GestureDetector(
+                                        onTap: () async {
+                                          await hp.confirmArrival(trip.id);
+                                          if (context.mounted) await hp.completeTrip(trip.id);
+                                        },
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.hospitalTeal,
+                                            borderRadius: AppSpacing.borderRadiusSm,
+                                          ),
+                                          child: Text('Patient Received',
+                                              style: AppTypography.caption.copyWith(color: AppColors.white, fontWeight: FontWeight.w600)),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              else if (isDeclined)
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.mediumGray.withValues(alpha: 0.1),
+                                    borderRadius: AppSpacing.borderRadiusSm,
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(Icons.close, size: 18, color: AppColors.mediumGray),
+                                      const SizedBox(width: 8),
+                                      Text('Declined — Rerouted',
+                                          style: AppTypography.bodyS.copyWith(color: AppColors.mediumGray)),
+                                    ],
+                                  ),
+                                )
+                              else
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: GestureDetector(
+                                        onTap: () => _showTripDecisionDialog(context, trip),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(vertical: 12),
+                                          decoration: BoxDecoration(
+                                            gradient: const LinearGradient(
+                                              colors: [AppColors.lifelineGreen, Color(0xFF15A366)],
+                                            ),
+                                            borderRadius: AppSpacing.borderRadiusSm,
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: AppColors.lifelineGreen.withValues(alpha: 0.25),
+                                                blurRadius: 6,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                            ],
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              const Icon(Icons.notifications_active, size: 16, color: AppColors.white),
+                                              const SizedBox(width: 6),
+                                              Text('Review & Respond',
+                                                  style: AppTypography.bodyS.copyWith(color: AppColors.white, fontWeight: FontWeight.w700)),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    GestureDetector(
+                                      onTap: () => context.go('/hospital/alert'),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.medicalBlue.withValues(alpha: 0.1),
+                                          borderRadius: AppSpacing.borderRadiusSm,
+                                        ),
+                                        child: const Icon(Icons.open_in_new, size: 18, color: AppColors.medicalBlue),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -536,6 +913,53 @@ class _IncomingTab extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+class _HospitalDetailRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+
+  const _HospitalDetailRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 16, color: color),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: AppTypography.overline.copyWith(color: AppColors.mediumGray, fontSize: 9),
+              ),
+              Text(
+                value,
+                style: AppTypography.bodyS.copyWith(fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

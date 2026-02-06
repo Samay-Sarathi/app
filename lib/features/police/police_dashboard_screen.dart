@@ -22,6 +22,118 @@ class PoliceDashboardScreen extends StatefulWidget {
 class _PoliceDashboardScreenState extends State<PoliceDashboardScreen> {
   int _navIndex = 0;
 
+  // Track accepted / declined trips
+  final List<_TripData> _allTrips = [
+    _TripData(
+      id: 'A-01',
+      driverName: 'Ambulance A-01',
+      route: 'MG Road → Central Hospital',
+      incidentType: 'Cardiac Emergency',
+      severity: 9,
+      etaMinutes: 4,
+      distanceKm: '2.3',
+      hospital: 'Central Hospital',
+      patientInfo: 'Male, ~55 yrs',
+    ),
+    _TripData(
+      id: 'A-03',
+      driverName: 'Ambulance A-03',
+      route: 'Ring Road → City Hospital',
+      incidentType: 'Road Accident',
+      severity: 7,
+      etaMinutes: 8,
+      distanceKm: '5.1',
+      hospital: 'City Hospital',
+      patientInfo: 'Female, ~30 yrs',
+    ),
+  ];
+
+  // Pending incoming request (simulated new trip)
+  _TripData? _pendingTrip;
+  bool _showedInitialAlert = false;
+
+  void _goToMapTab() {
+    setState(() => _navIndex = 1);
+  }
+
+  void _simulateNewTrip() {
+    setState(() {
+      _pendingTrip = _TripData(
+        id: 'A-07',
+        driverName: 'Ambulance A-07',
+        route: 'NH-48 → Metro Hospital',
+        incidentType: 'Burn Emergency',
+        severity: 8,
+        etaMinutes: 6,
+        distanceKm: '3.8',
+        hospital: 'Metro Hospital',
+        patientInfo: 'Child, ~8 yrs',
+      );
+    });
+    _showTripRequestDialog(_pendingTrip!);
+  }
+
+  void _showTripRequestDialog(_TripData trip) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => _TripRequestDialog(
+        trip: trip,
+        onAccept: () {
+          Navigator.of(ctx).pop();
+          setState(() {
+            _allTrips.add(trip);
+            _pendingTrip = null;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: const [
+                  Icon(Icons.check_circle, color: AppColors.white, size: 18),
+                  SizedBox(width: 8),
+                  Text('Route clearance accepted'),
+                ],
+              ),
+              backgroundColor: AppColors.lifelineGreen,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          );
+        },
+        onDecline: () {
+          Navigator.of(ctx).pop();
+          setState(() => _pendingTrip = null);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: const [
+                  Icon(Icons.info_outline, color: AppColors.white, size: 18),
+                  SizedBox(width: 8),
+                  Text('Request forwarded to next officer'),
+                ],
+              ),
+              backgroundColor: AppColors.warmOrange,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Show a simulated incoming alert once after build
+    if (!_showedInitialAlert) {
+      _showedInitialAlert = true;
+      Future.delayed(const Duration(milliseconds: 800), () {
+        if (mounted) _simulateNewTrip();
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -29,8 +141,11 @@ class _PoliceDashboardScreenState extends State<PoliceDashboardScreen> {
         child: IndexedStack(
           index: _navIndex,
           children: [
-            _ActiveTripsTab(),
-            _MapTab(),
+            _ActiveTripsTab(
+              trips: _allTrips,
+              onTrackTrip: (_) => _goToMapTab(),
+            ),
+            _MapTab(trips: _allTrips),
             _AlertsTab(),
             _SettingsTab(),
           ],
@@ -50,8 +165,260 @@ class _PoliceDashboardScreenState extends State<PoliceDashboardScreen> {
   }
 }
 
+// ── Trip Request Accept/Decline Dialog ──
+
+class _TripRequestDialog extends StatelessWidget {
+  final _TripData trip;
+  final VoidCallback onAccept;
+  final VoidCallback onDecline;
+
+  const _TripRequestDialog({
+    required this.trip,
+    required this.onAccept,
+    required this.onDecline,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final sevColor = trip.severity >= 7
+        ? AppColors.emergencyRed
+        : (trip.severity >= 4 ? AppColors.warmOrange : AppColors.softYellow);
+
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Red header with pulse
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [sevColor, sevColor.withValues(alpha: 0.8)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: Column(
+              children: [
+                const Icon(Icons.emergency, size: 40, color: AppColors.white),
+                const SizedBox(height: 8),
+                Text(
+                  '🚨 INCOMING AMBULANCE',
+                  style: AppTypography.heading3.copyWith(
+                    color: AppColors.white,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Route clearance requested',
+                  style: AppTypography.bodyS.copyWith(
+                    color: AppColors.white.withValues(alpha: 0.85),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Trip details
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                _DetailRow(
+                  icon: Icons.local_shipping,
+                  label: 'Vehicle',
+                  value: trip.driverName,
+                  color: AppColors.medicalBlue,
+                ),
+                const SizedBox(height: 12),
+                _DetailRow(
+                  icon: Icons.medical_services,
+                  label: 'Emergency',
+                  value: trip.incidentType,
+                  color: sevColor,
+                ),
+                const SizedBox(height: 12),
+                _DetailRow(
+                  icon: Icons.route,
+                  label: 'Route',
+                  value: trip.route,
+                  color: AppColors.calmPurple,
+                ),
+                const SizedBox(height: 12),
+                _DetailRow(
+                  icon: Icons.local_hospital,
+                  label: 'Destination',
+                  value: trip.hospital,
+                  color: AppColors.hospitalTeal,
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _DetailRow(
+                        icon: Icons.timer,
+                        label: 'ETA',
+                        value: '${trip.etaMinutes} min',
+                        color: AppColors.warmOrange,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _DetailRow(
+                        icon: Icons.speed,
+                        label: 'Severity',
+                        value: '${trip.severity}/10',
+                        color: sevColor,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                // Action buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: onDecline,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          decoration: BoxDecoration(
+                            color: AppColors.emergencyRed.withValues(alpha: 0.1),
+                            borderRadius: AppSpacing.borderRadiusMd,
+                            border: Border.all(
+                              color: AppColors.emergencyRed.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.close, size: 18, color: AppColors.emergencyRed),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Decline',
+                                style: AppTypography.bodyS.copyWith(
+                                  color: AppColors.emergencyRed,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 2,
+                      child: GestureDetector(
+                        onTap: onAccept,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [AppColors.lifelineGreen, Color(0xFF15A366)],
+                            ),
+                            borderRadius: AppSpacing.borderRadiusMd,
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.lifelineGreen.withValues(alpha: 0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.check, size: 18, color: AppColors.white),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Accept & Clear Route',
+                                style: AppTypography.bodyS.copyWith(
+                                  color: AppColors.white,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+
+  const _DetailRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 16, color: color),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: AppTypography.overline.copyWith(
+                  color: AppColors.mediumGray,
+                  fontSize: 9,
+                ),
+              ),
+              Text(
+                value,
+                style: AppTypography.bodyS.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 // ── Tab 0: Active Ambulance Trips ──
+
 class _ActiveTripsTab extends StatelessWidget {
+  final List<_TripData> trips;
+  final ValueChanged<_TripData> onTrackTrip;
+
+  const _ActiveTripsTab({required this.trips, required this.onTrackTrip});
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -69,23 +436,35 @@ class _ActiveTripsTab extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.shield, size: 24, color: AppColors.calmPurple),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Traffic Police',
-                    style: AppTypography.heading2.copyWith(color: onSurface),
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: AppColors.calmPurple.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.shield, size: 20, color: AppColors.calmPurple),
+                  ),
+                  const SizedBox(width: 10),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Traffic Police',
+                        style: AppTypography.heading3.copyWith(color: onSurface),
+                      ),
+                      Text(
+                        auth.isAuthenticated
+                            ? 'Welcome, ${auth.fullName}'
+                            : 'Route Clearance Control',
+                        style: AppTypography.caption.copyWith(color: AppColors.mediumGray),
+                      ),
+                    ],
                   ),
                 ],
               ),
               const StatusBadge(status: BadgeStatus.active, label: 'ON DUTY'),
             ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            auth.isAuthenticated
-                ? 'Welcome, ${auth.fullName}'
-                : 'Route Clearance Control',
-            style: AppTypography.bodyS.copyWith(color: AppColors.mediumGray),
           ),
           const SizedBox(height: 20),
 
@@ -94,26 +473,26 @@ class _ActiveTripsTab extends StatelessWidget {
             children: [
               Expanded(
                 child: _StatCard(
-                  value: '2',
+                  value: '${trips.length}',
                   label: 'Active Trips',
                   color: AppColors.emergencyRed,
                   icon: Icons.local_shipping,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: _StatCard(
                   value: '5',
-                  label: 'Signals Managed',
+                  label: 'Signals',
                   color: AppColors.lifelineGreen,
                   icon: Icons.traffic,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: _StatCard(
                   value: '12',
-                  label: 'Cleared Today',
+                  label: 'Cleared',
                   color: AppColors.medicalBlue,
                   icon: Icons.check_circle,
                 ),
@@ -139,9 +518,23 @@ class _ActiveTripsTab extends StatelessWidget {
                   color: AppColors.emergencyRed.withValues(alpha: 0.1),
                   borderRadius: AppSpacing.borderRadiusFull,
                 ),
-                child: Text(
-                  '2 Active',
-                  style: AppTypography.overline.copyWith(color: AppColors.emergencyRed),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        color: AppColors.emergencyRed,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${trips.length} Active',
+                      style: AppTypography.overline.copyWith(color: AppColors.emergencyRed),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -150,27 +543,30 @@ class _ActiveTripsTab extends StatelessWidget {
 
           // Trip cards
           Expanded(
-            child: ListView(
-              children: const [
-                _ActiveTripCard(
-                  driverName: 'Ambulance A-01',
-                  route: 'MG Road → Central Hospital',
-                  incidentType: 'Cardiac Emergency',
-                  severity: 9,
-                  etaMinutes: 4,
-                  distanceKm: '2.3',
-                ),
-                SizedBox(height: 12),
-                _ActiveTripCard(
-                  driverName: 'Ambulance A-03',
-                  route: 'Ring Road → City Hospital',
-                  incidentType: 'Road Accident',
-                  severity: 7,
-                  etaMinutes: 8,
-                  distanceKm: '5.1',
-                ),
-              ],
-            ),
+            child: trips.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.check_circle_outline, size: 56, color: AppColors.lifelineGreen.withValues(alpha: 0.4)),
+                        const SizedBox(height: 12),
+                        Text('No active trips', style: AppTypography.body.copyWith(color: AppColors.mediumGray)),
+                        const SizedBox(height: 4),
+                        Text('Routes are clear', style: AppTypography.caption.copyWith(color: AppColors.mediumGray)),
+                      ],
+                    ),
+                  )
+                : ListView.separated(
+                    itemCount: trips.length,
+                    separatorBuilder: (context, index) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final trip = trips[index];
+                      return _ActiveTripCard(
+                        trip: trip,
+                        onTap: () => onTrackTrip(trip),
+                      );
+                    },
+                  ),
           ),
         ],
       ),
@@ -178,160 +574,207 @@ class _ActiveTripsTab extends StatelessWidget {
   }
 }
 
+// ── Redesigned Active Trip Card ──
+
 class _ActiveTripCard extends StatelessWidget {
-  final String driverName;
-  final String route;
-  final String incidentType;
-  final int severity;
-  final int etaMinutes;
-  final String distanceKm;
+  final _TripData trip;
+  final VoidCallback onTap;
 
-  const _ActiveTripCard({
-    required this.driverName,
-    required this.route,
-    required this.incidentType,
-    required this.severity,
-    required this.etaMinutes,
-    required this.distanceKm,
-  });
-
-  Color get _severityColor {
-    if (severity >= 7) return AppColors.emergencyRed;
-    if (severity >= 4) return AppColors.warmOrange;
-    return AppColors.softYellow;
-  }
+  const _ActiveTripCard({required this.trip, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final cardColor = Theme.of(context).colorScheme.surface;
-    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final theme = Theme.of(context);
+    final cardColor = theme.colorScheme.surface;
+    final onSurface = theme.colorScheme.onSurface;
+    final sevColor = trip.severity >= 7
+        ? AppColors.emergencyRed
+        : (trip.severity >= 4 ? AppColors.warmOrange : AppColors.softYellow);
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.spaceMd),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: AppSpacing.borderRadiusLg,
-        border: Border(left: BorderSide(color: _severityColor, width: 4)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: AppSpacing.borderRadiusLg,
+          boxShadow: [
+            BoxShadow(
+              color: sevColor.withValues(alpha: 0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            // Gradient header
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [sevColor, sevColor.withValues(alpha: 0.7)],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
+              ),
+              child: Row(
                 children: [
-                  Icon(Icons.local_shipping, size: 18, color: _severityColor),
-                  const SizedBox(width: 8),
-                  Text(
-                    driverName,
-                    style: AppTypography.bodyS.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: onSurface,
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: AppColors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.local_shipping, size: 16, color: AppColors.white),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      trip.driverName,
+                      style: AppTypography.bodyS.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.white,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppColors.white.withValues(alpha: 0.2),
+                      borderRadius: AppSpacing.borderRadiusFull,
+                    ),
+                    child: Text(
+                      'SEV ${trip.severity}',
+                      style: AppTypography.overline.copyWith(
+                        color: AppColors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ],
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: _severityColor.withValues(alpha: 0.1),
-                  borderRadius: AppSpacing.borderRadiusFull,
-                ),
-                child: Text(
-                  'Severity $severity',
-                  style: AppTypography.overline.copyWith(color: _severityColor),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Icon(Icons.route, size: 14, color: AppColors.mediumGray),
-              const SizedBox(width: 6),
-              Text(
-                route,
-                style: AppTypography.caption.copyWith(color: AppColors.mediumGray),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              Icon(Icons.medical_services, size: 14, color: AppColors.mediumGray),
-              const SizedBox(width: 6),
-              Text(
-                incidentType,
-                style: AppTypography.caption.copyWith(color: AppColors.mediumGray),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              _TripInfoChip(
-                icon: Icons.timer,
-                label: 'ETA ${etaMinutes}m',
-                color: AppColors.emergencyRed,
-              ),
-              const SizedBox(width: 12),
-              _TripInfoChip(
-                icon: Icons.straighten,
-                label: '$distanceKm km',
-                color: AppColors.medicalBlue,
-              ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppColors.calmPurple.withValues(alpha: 0.1),
-                  borderRadius: AppSpacing.borderRadiusFull,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.visibility, size: 14, color: AppColors.calmPurple),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Track',
-                      style: AppTypography.caption.copyWith(
-                        color: AppColors.calmPurple,
-                        fontWeight: FontWeight.w600,
+            ),
+
+            // Body
+            Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                children: [
+                  // Incident type
+                  Row(
+                    children: [
+                      Icon(Icons.medical_services, size: 15, color: sevColor),
+                      const SizedBox(width: 8),
+                      Text(
+                        trip.incidentType,
+                        style: AppTypography.bodyS.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: onSurface,
+                        ),
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // Route
+                  Row(
+                    children: [
+                      const Icon(Icons.route, size: 15, color: AppColors.calmPurple),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          trip.route,
+                          style: AppTypography.caption.copyWith(color: AppColors.mediumGray),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  // Hospital
+                  Row(
+                    children: [
+                      const Icon(Icons.local_hospital, size: 15, color: AppColors.hospitalTeal),
+                      const SizedBox(width: 8),
+                      Text(
+                        trip.hospital,
+                        style: AppTypography.caption.copyWith(color: AppColors.mediumGray),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  // Bottom info row
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: theme.scaffoldBackgroundColor,
+                      borderRadius: AppSpacing.borderRadiusSm,
                     ),
-                  ],
-                ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.timer, size: 15, color: AppColors.emergencyRed),
+                        const SizedBox(width: 4),
+                        Text(
+                          'ETA ${trip.etaMinutes}m',
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.emergencyRed,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Icon(Icons.straighten, size: 15, color: AppColors.medicalBlue),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${trip.distanceKm} km',
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.medicalBlue,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: AppColors.calmPurple.withValues(alpha: 0.1),
+                            borderRadius: AppSpacing.borderRadiusFull,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.map, size: 13, color: AppColors.calmPurple),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Track on Map',
+                                style: AppTypography.caption.copyWith(
+                                  color: AppColors.calmPurple,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
-    );
-  }
-}
-
-class _TripInfoChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  const _TripInfoChip({required this.icon, required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 14, color: color),
-        const SizedBox(width: 4),
-        Text(label, style: AppTypography.caption.copyWith(color: color, fontWeight: FontWeight.w600)),
-      ],
     );
   }
 }
 
 // ── Tab 1: Map View ──
+
 class _MapTab extends StatefulWidget {
+  final List<_TripData> trips;
+
+  const _MapTab({required this.trips});
+
   @override
   State<_MapTab> createState() => _MapTabState();
 }
@@ -357,11 +800,11 @@ class _MapTabState extends State<_MapTab> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Jurisdiction Map', style: AppTypography.heading2.copyWith(color: onSurface)),
+              Text('Jurisdiction Map', style: AppTypography.heading3.copyWith(color: onSurface)),
               const StatusBadge(status: BadgeStatus.synced, label: 'GPS ACTIVE'),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Expanded(
             child: ClipRRect(
               borderRadius: AppSpacing.borderRadiusLg,
@@ -393,21 +836,82 @@ class _MapTabState extends State<_MapTab> {
             ),
           ),
           const SizedBox(height: 12),
+          // Active ambulances summary strip
+          if (widget.trips.isNotEmpty) ...[
+            Text(
+              'AMBULANCES ON MAP',
+              style: AppTypography.overline.copyWith(
+                color: AppColors.mediumGray,
+                letterSpacing: 1.2,
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 56,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: widget.trips.length,
+                separatorBuilder: (context, index) => const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  final t = widget.trips[index];
+                  final sColor = t.severity >= 7 ? AppColors.emergencyRed : AppColors.warmOrange;
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: sColor.withValues(alpha: 0.1),
+                      borderRadius: AppSpacing.borderRadiusMd,
+                      border: Border.all(color: sColor.withValues(alpha: 0.25)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.local_shipping, size: 16, color: sColor),
+                        const SizedBox(width: 8),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              t.driverName,
+                              style: AppTypography.caption.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: sColor,
+                              ),
+                            ),
+                            Text(
+                              'ETA ${t.etaMinutes}m • ${t.distanceKm}km',
+                              style: AppTypography.overline.copyWith(
+                                color: AppColors.mediumGray,
+                                fontSize: 9,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
           // Signal status bar
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: AppColors.lifelineGreen.withValues(alpha: 0.1),
+              color: AppColors.lifelineGreen.withValues(alpha: 0.08),
               borderRadius: AppSpacing.borderRadiusMd,
-              border: Border.all(color: AppColors.lifelineGreen.withValues(alpha: 0.3)),
+              border: Border.all(color: AppColors.lifelineGreen.withValues(alpha: 0.2)),
             ),
             child: Row(
               children: [
-                const Icon(Icons.traffic, color: AppColors.lifelineGreen, size: 22),
-                const SizedBox(width: 12),
+                const Icon(Icons.traffic, color: AppColors.lifelineGreen, size: 20),
+                const SizedBox(width: 10),
                 Text(
                   '3 signals set to GREEN on active routes',
-                  style: AppTypography.bodyS.copyWith(color: AppColors.lifelineGreen),
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.lifelineGreen,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
@@ -419,6 +923,7 @@ class _MapTabState extends State<_MapTab> {
 }
 
 // ── Tab 2: Alerts ──
+
 class _AlertsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -432,7 +937,7 @@ class _AlertsTab extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Alerts', style: AppTypography.heading2.copyWith(color: onSurface)),
+              Text('Alerts', style: AppTypography.heading3.copyWith(color: onSurface)),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
@@ -446,7 +951,7 @@ class _AlertsTab extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           Expanded(
             child: ListView(
               children: const [
@@ -456,21 +961,21 @@ class _AlertsTab extends StatelessWidget {
                   subtitle: 'Cardiac Emergency — Severity 9/10 — ETA to your area: 4 min',
                   time: '1 min ago',
                 ),
-                SizedBox(height: 12),
+                SizedBox(height: 10),
                 _PoliceAlertItem(
                   type: _PoliceAlertType.emergency,
                   title: '🚨 Route Clearance Needed',
                   subtitle: 'Road Accident — Severity 7/10 — Ring Road corridor',
                   time: '5 min ago',
                 ),
-                SizedBox(height: 12),
+                SizedBox(height: 10),
                 _PoliceAlertItem(
                   type: _PoliceAlertType.success,
                   title: '✅ Trip #A7F2 Completed',
                   subtitle: 'Ambulance trip completed. Route clearance ended.',
                   time: '22 min ago',
                 ),
-                SizedBox(height: 12),
+                SizedBox(height: 10),
                 _PoliceAlertItem(
                   type: _PoliceAlertType.info,
                   title: 'Shift Started',
@@ -533,7 +1038,7 @@ class _PoliceAlertItem extends StatelessWidget {
     final onSurface = Theme.of(context).colorScheme.onSurface;
 
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.spaceMd),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: AppSpacing.borderRadiusMd,
@@ -543,13 +1048,13 @@ class _PoliceAlertItem extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 36,
-            height: 36,
+            width: 34,
+            height: 34,
             decoration: BoxDecoration(
               color: _color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(_icon, size: 20, color: _color),
+            child: Icon(_icon, size: 18, color: _color),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -570,6 +1075,7 @@ class _PoliceAlertItem extends StatelessWidget {
 }
 
 // ── Tab 3: Settings ──
+
 class _SettingsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -583,7 +1089,7 @@ class _SettingsTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Settings', style: AppTypography.heading2.copyWith(color: onSurface)),
+          Text('Settings', style: AppTypography.heading3.copyWith(color: onSurface)),
           const SizedBox(height: 24),
           Expanded(
             child: ListView(
@@ -670,6 +1176,8 @@ class _SettingsTab extends StatelessWidget {
   }
 }
 
+// ── Shared Widgets ──
+
 class _SettingItem extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -735,4 +1243,30 @@ class _StatCard extends StatelessWidget {
       ),
     );
   }
+}
+
+// ── Data Model ──
+
+class _TripData {
+  final String id;
+  final String driverName;
+  final String route;
+  final String incidentType;
+  final int severity;
+  final int etaMinutes;
+  final String distanceKm;
+  final String hospital;
+  final String patientInfo;
+
+  const _TripData({
+    required this.id,
+    required this.driverName,
+    required this.route,
+    required this.incidentType,
+    required this.severity,
+    required this.etaMinutes,
+    required this.distanceKm,
+    required this.hospital,
+    required this.patientInfo,
+  });
 }

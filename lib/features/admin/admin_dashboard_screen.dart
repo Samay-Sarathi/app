@@ -780,78 +780,107 @@ class _TripAnalyticsTabState extends State<_TripAnalyticsTab> {
             itemCount: filtered.length,
             itemBuilder: (context, index) {
               final trip = filtered[index];
+              final sevColor = _severityColor(trip.severity);
+
               return Container(
-                margin: const EdgeInsets.only(bottom: 10),
-                padding: const EdgeInsets.all(14),
+                margin: const EdgeInsets.only(bottom: 12),
+                clipBehavior: Clip.antiAlias,
                 decoration: BoxDecoration(
                   color: cardColor,
                   borderRadius: AppSpacing.borderRadiusMd,
-                  border: trip.severity >= 8
-                      ? Border.all(color: AppColors.emergencyRed.withValues(alpha: 0.3))
-                      : null,
+                  boxShadow: [
+                    BoxShadow(
+                      color: sevColor.withValues(alpha: 0.06),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Text(
-                          trip.id,
-                          style: AppTypography.vitalS.copyWith(
-                            color: AppColors.medicalBlue,
-                            fontSize: 13,
-                          ),
+                    // Gradient header
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [sevColor, sevColor.withValues(alpha: 0.7)],
                         ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: _severityColor(trip.severity).withValues(alpha: 0.1),
-                            borderRadius: AppSpacing.borderRadiusFull,
-                          ),
-                          child: Text(
-                            'SEV ${trip.severity}',
-                            style: AppTypography.overline.copyWith(
-                              color: _severityColor(trip.severity),
-                              fontWeight: FontWeight.w700,
+                      ),
+                      child: Row(
+                        children: [
+                          Text(
+                            trip.id,
+                            style: AppTypography.vitalS.copyWith(
+                              color: AppColors.white,
+                              fontSize: 13,
                             ),
                           ),
-                        ),
-                        const Spacer(),
-                        _TripStatusBadge(status: trip.status),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        const Icon(Icons.category, size: 14, color: AppColors.mediumGray),
-                        const SizedBox(width: 4),
-                        Text(trip.type, style: AppTypography.caption.copyWith(color: onSurface)),
-                        const SizedBox(width: 16),
-                        const Icon(Icons.local_shipping, size: 14, color: AppColors.mediumGray),
-                        const SizedBox(width: 4),
-                        Text(trip.driver, style: AppTypography.caption.copyWith(color: onSurface)),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Icon(Icons.local_hospital, size: 14, color: AppColors.mediumGray),
-                        const SizedBox(width: 4),
-                        Text(trip.hospital, style: AppTypography.caption.copyWith(color: onSurface)),
-                        if (trip.eta != '—') ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.white.withValues(alpha: 0.2),
+                              borderRadius: AppSpacing.borderRadiusFull,
+                            ),
+                            child: Text(
+                              'SEV ${trip.severity}',
+                              style: AppTypography.overline.copyWith(
+                                color: AppColors.white,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
                           const Spacer(),
-                          const Icon(Icons.timer, size: 14, color: AppColors.warmOrange),
-                          const SizedBox(width: 4),
-                          Text(
-                            'ETA: ${trip.eta}',
-                            style: AppTypography.caption.copyWith(
-                              color: AppColors.warmOrange,
-                              fontWeight: FontWeight.w600,
+                          _TripStatusBadge(status: trip.status, inverted: true),
+                        ],
+                      ),
+                    ),
+                    // Body
+                    Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.category, size: 14, color: sevColor),
+                              const SizedBox(width: 6),
+                              Text(trip.type, style: AppTypography.bodyS.copyWith(fontWeight: FontWeight.w600, color: onSurface)),
+                              const Spacer(),
+                              const Icon(Icons.local_shipping, size: 14, color: AppColors.medicalBlue),
+                              const SizedBox(width: 6),
+                              Text(trip.driver, style: AppTypography.caption.copyWith(color: onSurface)),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).scaffoldBackgroundColor,
+                              borderRadius: AppSpacing.borderRadiusSm,
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.local_hospital, size: 14, color: AppColors.hospitalTeal),
+                                const SizedBox(width: 6),
+                                Text(trip.hospital, style: AppTypography.caption.copyWith(color: onSurface)),
+                                if (trip.eta != '—') ...[
+                                  const Spacer(),
+                                  Icon(Icons.timer, size: 14, color: AppColors.warmOrange),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'ETA: ${trip.eta}',
+                                    style: AppTypography.caption.copyWith(
+                                      color: AppColors.warmOrange,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
                           ),
                         ],
-                      ],
+                      ),
                     ),
                   ],
                 ),
@@ -1037,7 +1066,8 @@ class _ActionButton extends StatelessWidget {
 
 class _TripStatusBadge extends StatelessWidget {
   final String status;
-  const _TripStatusBadge({required this.status});
+  final bool inverted;
+  const _TripStatusBadge({required this.status, this.inverted = false});
 
   Color get _color {
     switch (status) {
@@ -1071,20 +1101,21 @@ class _TripStatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final displayColor = inverted ? Colors.white : _color;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: _color.withValues(alpha: 0.1),
+        color: inverted ? Colors.white.withValues(alpha: 0.2) : _color.withValues(alpha: 0.1),
         borderRadius: AppSpacing.borderRadiusFull,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(_icon, size: 12, color: _color),
+          Icon(_icon, size: 12, color: displayColor),
           const SizedBox(width: 4),
           Text(
             status.toUpperCase(),
-            style: AppTypography.overline.copyWith(color: _color),
+            style: AppTypography.overline.copyWith(color: displayColor),
           ),
         ],
       ),
