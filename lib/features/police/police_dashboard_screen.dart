@@ -91,28 +91,10 @@ class _PoliceDashboardScreenState extends State<PoliceDashboardScreen> {
                 children: const [
                   Icon(Icons.check_circle, color: AppColors.white, size: 18),
                   SizedBox(width: 8),
-                  Text('Route clearance accepted'),
+                  Text('Route clearance accepted — signals cleared'),
                 ],
               ),
               backgroundColor: AppColors.lifelineGreen,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-          );
-        },
-        onDecline: () {
-          Navigator.of(ctx).pop();
-          setState(() => _pendingTrip = null);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: const [
-                  Icon(Icons.info_outline, color: AppColors.white, size: 18),
-                  SizedBox(width: 8),
-                  Text('Request forwarded to next officer'),
-                ],
-              ),
-              backgroundColor: AppColors.warmOrange,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
@@ -170,12 +152,10 @@ class _PoliceDashboardScreenState extends State<PoliceDashboardScreen> {
 class _TripRequestDialog extends StatelessWidget {
   final _TripData trip;
   final VoidCallback onAccept;
-  final VoidCallback onDecline;
 
   const _TripRequestDialog({
     required this.trip,
     required this.onAccept,
-    required this.onDecline,
   });
 
   @override
@@ -279,76 +259,64 @@ class _TripRequestDialog extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
 
-                // Action buttons
-                Row(
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: onDecline,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          decoration: BoxDecoration(
-                            color: AppColors.emergencyRed.withValues(alpha: 0.1),
-                            borderRadius: AppSpacing.borderRadiusMd,
-                            border: Border.all(
-                              color: AppColors.emergencyRed.withValues(alpha: 0.3),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.close, size: 18, color: AppColors.emergencyRed),
-                              const SizedBox(width: 6),
-                              Text(
-                                'Decline',
-                                style: AppTypography.bodyS.copyWith(
-                                  color: AppColors.emergencyRed,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
+                // Duty notice
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.calmPurple.withValues(alpha: 0.08),
+                    borderRadius: AppSpacing.borderRadiusSm,
+                    border: Border.all(color: AppColors.calmPurple.withValues(alpha: 0.2)),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.shield, size: 16, color: AppColors.calmPurple),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'As an on-duty officer, you are required to clear the route for emergency vehicles. This action will activate signal overrides along the ambulance route.',
+                          style: AppTypography.caption.copyWith(color: AppColors.calmPurple),
                         ),
                       ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Single accept button — no decline for police
+                GestureDetector(
+                  onTap: onAccept,
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [AppColors.lifelineGreen, Color(0xFF15A366)],
+                      ),
+                      borderRadius: AppSpacing.borderRadiusMd,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.lifelineGreen.withValues(alpha: 0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      flex: 2,
-                      child: GestureDetector(
-                        onTap: onAccept,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [AppColors.lifelineGreen, Color(0xFF15A366)],
-                            ),
-                            borderRadius: AppSpacing.borderRadiusMd,
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.lifelineGreen.withValues(alpha: 0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.check, size: 18, color: AppColors.white),
-                              const SizedBox(width: 6),
-                              Text(
-                                'Accept & Clear Route',
-                                style: AppTypography.bodyS.copyWith(
-                                  color: AppColors.white,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.verified, size: 20, color: AppColors.white),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Accept & Clear Route',
+                          style: AppTypography.body.copyWith(
+                            color: AppColors.white,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ],
             ),

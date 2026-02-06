@@ -132,6 +132,176 @@ class _CapacityTabState extends State<_CapacityTab> {
   }
 
   Future<void> _syncHeartbeat() async {
+    // Show critical confirmation dialog before syncing
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Warning header
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [AppColors.warmOrange, AppColors.warmOrange.withValues(alpha: 0.8)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: Column(
+                children: [
+                  const Icon(Icons.warning_amber_rounded, size: 44, color: AppColors.white),
+                  const SizedBox(height: 8),
+                  Text(
+                    '⚠️ CRITICAL INFORMATION',
+                    style: AppTypography.heading3.copyWith(
+                      color: AppColors.white,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Review before submitting',
+                    style: AppTypography.bodyS.copyWith(
+                      color: AppColors.white.withValues(alpha: 0.85),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Summary of what will be synced
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Theme.of(ctx).scaffoldBackgroundColor,
+                      borderRadius: AppSpacing.borderRadiusSm,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('DATA TO BE SYNCED', style: AppTypography.overline.copyWith(color: AppColors.mediumGray, letterSpacing: 1.2)),
+                        const SizedBox(height: 10),
+                        _SyncSummaryRow(label: 'Vacant Beds', value: '$_vacantBeds / $_totalBeds'),
+                        const SizedBox(height: 6),
+                        _SyncSummaryRow(label: 'Free Doctors', value: '$_freeDoctors / $_activeDoctors'),
+                        const SizedBox(height: 6),
+                        _SyncSummaryRow(label: 'Staffing Level', value: _staffingLevel),
+                        const SizedBox(height: 6),
+                        _SyncSummaryRow(label: 'Chaos Score', value: '$_chaosScore / 10'),
+                        const SizedBox(height: 6),
+                        _SyncSummaryRow(
+                          label: 'Equipment',
+                          value: _equipment.entries.where((e) => e.value).map((e) => e.key).join(', '),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Critical warning
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.emergencyRed.withValues(alpha: 0.08),
+                      borderRadius: AppSpacing.borderRadiusSm,
+                      border: Border.all(color: AppColors.emergencyRed.withValues(alpha: 0.2)),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.error_outline, size: 18, color: AppColors.emergencyRed),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'This information is CRITICAL for ambulance routing. Incorrect data may result in patients being directed to an unprepared facility. Please verify all values carefully before confirming.',
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.emergencyRed,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  // Buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => Navigator.of(ctx).pop(false),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            decoration: BoxDecoration(
+                              color: AppColors.mediumGray.withValues(alpha: 0.1),
+                              borderRadius: AppSpacing.borderRadiusMd,
+                              border: Border.all(color: AppColors.mediumGray.withValues(alpha: 0.3)),
+                            ),
+                            child: Center(
+                              child: Text(
+                                'Go Back & Review',
+                                style: AppTypography.bodyS.copyWith(
+                                  color: AppColors.mediumGray,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => Navigator.of(ctx).pop(true),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [AppColors.hospitalTeal, Color(0xFF0A8F6F)],
+                              ),
+                              borderRadius: AppSpacing.borderRadiusMd,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.hospitalTeal.withValues(alpha: 0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Center(
+                              child: Text(
+                                'Confirm & Sync',
+                                style: AppTypography.bodyS.copyWith(
+                                  color: AppColors.white,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed != true) return;
+
     final hp = context.read<HospitalProvider>();
     final messenger = ScaffoldMessenger.of(context);
     final success = await hp.sendHeartbeat(
@@ -431,6 +601,34 @@ class _IncomingTab extends StatefulWidget {
 class _IncomingTabState extends State<_IncomingTab> {
   final Set<String> _acceptedTrips = {};
   final Set<String> _declinedTrips = {};
+  final Map<String, String> _declineReasons = {};
+  // Simulated ambulance distance in meters (decreases over time for accepted)
+  final Map<String, int> _ambulanceDistances = {};
+  Timer? _distanceTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    // Simulate ambulance approaching — decrease distance every 3 seconds
+    _distanceTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (!mounted) return;
+      bool changed = false;
+      for (final id in _acceptedTrips) {
+        final current = _ambulanceDistances[id] ?? 2000;
+        if (current > 0) {
+          _ambulanceDistances[id] = (current - 150).clamp(0, 99999);
+          changed = true;
+        }
+      }
+      if (changed) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _distanceTimer?.cancel();
+    super.dispose();
+  }
 
   void _showTripDecisionDialog(BuildContext context, dynamic trip) {
     final sevColor = trip.severity >= 7 ? AppColors.emergencyRed : AppColors.warmOrange;
@@ -520,7 +718,7 @@ class _IncomingTabState extends State<_IncomingTab> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Accepting will notify the driver that your hospital is ready. Declining will route the ambulance to the next available hospital.',
+                            'Accepting will share live ambulance location with your hospital and notify the driver. Declining requires a reason and will route the patient to the next available hospital.',
                             style: AppTypography.caption.copyWith(color: AppColors.warmOrange),
                           ),
                         ),
@@ -536,21 +734,7 @@ class _IncomingTabState extends State<_IncomingTab> {
                         child: GestureDetector(
                           onTap: () {
                             Navigator.of(ctx).pop();
-                            setState(() => _declinedTrips.add(trip.id));
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Row(
-                                  children: const [
-                                    Icon(Icons.info_outline, color: AppColors.white, size: 18),
-                                    SizedBox(width: 8),
-                                    Text('Patient re-routed to next hospital'),
-                                  ],
-                                ),
-                                backgroundColor: AppColors.warmOrange,
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              ),
-                            );
+                            _showDeclineReasonDialog(context, trip);
                           },
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 14),
@@ -582,14 +766,17 @@ class _IncomingTabState extends State<_IncomingTab> {
                         child: GestureDetector(
                           onTap: () {
                             Navigator.of(ctx).pop();
-                            setState(() => _acceptedTrips.add(trip.id));
+                            setState(() {
+                              _acceptedTrips.add(trip.id);
+                              _ambulanceDistances[trip.id] = 2000; // start at 2km
+                            });
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Row(
                                   children: const [
                                     Icon(Icons.check_circle, color: AppColors.white, size: 18),
                                     SizedBox(width: 8),
-                                    Text('Patient accepted — preparing bay'),
+                                    Expanded(child: Text('Patient accepted — live location shared')),
                                   ],
                                 ),
                                 backgroundColor: AppColors.lifelineGreen,
@@ -636,6 +823,229 @@ class _IncomingTabState extends State<_IncomingTab> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// Show a dialog that requires the hospital to select a reason for declining
+  void _showDeclineReasonDialog(BuildContext context, dynamic trip) {
+    String? selectedReason;
+    final reasons = [
+      'No available beds',
+      'No specialist on duty',
+      'Equipment not available',
+      'ER at full capacity',
+      'Mass casualty event in progress',
+      'Other',
+    ];
+    final customController = TextEditingController();
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppColors.emergencyRed, Color(0xFFB71C1C)],
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    const Icon(Icons.report_problem, size: 32, color: AppColors.white),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Reason for Declining',
+                      style: AppTypography.heading3.copyWith(
+                        color: AppColors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'This information helps route the patient faster',
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.white.withValues(alpha: 0.85),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'SELECT A REASON',
+                      style: AppTypography.overline.copyWith(
+                        color: AppColors.mediumGray,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ...reasons.map((reason) {
+                      final isSelected = selectedReason == reason;
+                      return GestureDetector(
+                        onTap: () => setDialogState(() => selectedReason = reason),
+                        child: Container(
+                          width: double.infinity,
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? AppColors.emergencyRed.withValues(alpha: 0.08)
+                                : Theme.of(ctx).scaffoldBackgroundColor,
+                            borderRadius: AppSpacing.borderRadiusSm,
+                            border: Border.all(
+                              color: isSelected
+                                  ? AppColors.emergencyRed.withValues(alpha: 0.4)
+                                  : AppColors.lightGray,
+                              width: isSelected ? 2 : 1,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+                                size: 18,
+                                color: isSelected ? AppColors.emergencyRed : AppColors.mediumGray,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  reason,
+                                  style: AppTypography.bodyS.copyWith(
+                                    color: isSelected ? AppColors.emergencyRed : Theme.of(ctx).colorScheme.onSurface,
+                                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
+                    if (selectedReason == 'Other') ...[
+                      const SizedBox(height: 4),
+                      TextField(
+                        controller: customController,
+                        decoration: InputDecoration(
+                          hintText: 'Please specify the reason...',
+                          hintStyle: AppTypography.caption.copyWith(color: AppColors.mediumGray),
+                          filled: true,
+                          fillColor: Theme.of(ctx).scaffoldBackgroundColor,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(color: AppColors.lightGray),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(color: AppColors.emergencyRed),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        ),
+                        maxLines: 2,
+                        style: AppTypography.bodyS,
+                      ),
+                    ],
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => Navigator.of(ctx).pop(),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              decoration: BoxDecoration(
+                                color: AppColors.mediumGray.withValues(alpha: 0.1),
+                                borderRadius: AppSpacing.borderRadiusMd,
+                                border: Border.all(color: AppColors.mediumGray.withValues(alpha: 0.3)),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  'Cancel',
+                                  style: AppTypography.bodyS.copyWith(
+                                    color: AppColors.mediumGray,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 2,
+                          child: GestureDetector(
+                            onTap: selectedReason == null
+                                ? null
+                                : () {
+                                    final reason = selectedReason == 'Other'
+                                        ? (customController.text.trim().isNotEmpty
+                                            ? customController.text.trim()
+                                            : 'Other')
+                                        : selectedReason!;
+                                    Navigator.of(ctx).pop();
+                                    setState(() {
+                                      _declinedTrips.add(trip.id);
+                                      _declineReasons[trip.id] = reason;
+                                    });
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Row(
+                                          children: const [
+                                            Icon(Icons.info_outline, color: AppColors.white, size: 18),
+                                            SizedBox(width: 8),
+                                            Expanded(child: Text('Patient re-routed — reason recorded')),
+                                          ],
+                                        ),
+                                        backgroundColor: AppColors.warmOrange,
+                                        behavior: SnackBarBehavior.floating,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                      ),
+                                    );
+                                  },
+                            child: AnimatedOpacity(
+                              opacity: selectedReason == null ? 0.4 : 1.0,
+                              duration: const Duration(milliseconds: 200),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [AppColors.emergencyRed, Color(0xFFB71C1C)],
+                                  ),
+                                  borderRadius: AppSpacing.borderRadiusMd,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    'Confirm Decline',
+                                    style: AppTypography.bodyS.copyWith(
+                                      color: AppColors.white,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -707,6 +1117,8 @@ class _IncomingTabState extends State<_IncomingTab> {
                   final sevColor = trip.severity >= 7 ? AppColors.emergencyRed : AppColors.warmOrange;
                   final isAccepted = _acceptedTrips.contains(trip.id);
                   final isDeclined = _declinedTrips.contains(trip.id);
+                  final distanceM = _ambulanceDistances[trip.id] ?? 2000;
+                  final isInRange = distanceM <= 500;
 
                   return Container(
                     clipBehavior: Clip.antiAlias,
@@ -792,7 +1204,7 @@ class _IncomingTabState extends State<_IncomingTab> {
                               ],
                               Row(
                                 children: [
-                                  Icon(Icons.confirmation_number, size: 15, color: AppColors.mediumGray),
+                                  const Icon(Icons.confirmation_number, size: 15, color: AppColors.mediumGray),
                                   const SizedBox(width: 8),
                                   Text(
                                     'Trip: ${trip.id.substring(0, trip.id.length.clamp(0, 8))}...',
@@ -801,60 +1213,203 @@ class _IncomingTabState extends State<_IncomingTab> {
                                 ],
                               ),
                               const SizedBox(height: 14),
-                              // Buttons
-                              if (isAccepted)
+
+                              // ── ACCEPTED STATE ──
+                              if (isAccepted) ...[
+                                // Live location tracking card
                                 Container(
                                   width: double.infinity,
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.medicalBlue.withValues(alpha: 0.06),
+                                    borderRadius: AppSpacing.borderRadiusSm,
+                                    border: Border.all(color: AppColors.medicalBlue.withValues(alpha: 0.2)),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Container(
+                                            width: 8,
+                                            height: 8,
+                                            decoration: BoxDecoration(
+                                              color: isInRange ? AppColors.lifelineGreen : AppColors.medicalBlue,
+                                              shape: BoxShape.circle,
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: (isInRange ? AppColors.lifelineGreen : AppColors.medicalBlue).withValues(alpha: 0.5),
+                                                  blurRadius: 4,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            'LIVE TRACKING',
+                                            style: AppTypography.overline.copyWith(
+                                              color: AppColors.medicalBlue,
+                                              letterSpacing: 1.2,
+                                            ),
+                                          ),
+                                          const Spacer(),
+                                          Icon(Icons.my_location, size: 14, color: isInRange ? AppColors.lifelineGreen : AppColors.medicalBlue),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            distanceM >= 1000
+                                                ? '${(distanceM / 1000).toStringAsFixed(1)} km away'
+                                                : '${distanceM}m away',
+                                            style: AppTypography.caption.copyWith(
+                                              color: isInRange ? AppColors.lifelineGreen : AppColors.medicalBlue,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      // Distance progress bar
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(3),
+                                        child: LinearProgressIndicator(
+                                          value: 1.0 - (distanceM / 2000).clamp(0.0, 1.0),
+                                          minHeight: 4,
+                                          backgroundColor: AppColors.medicalBlue.withValues(alpha: 0.15),
+                                          valueColor: AlwaysStoppedAnimation(
+                                            isInRange ? AppColors.lifelineGreen : AppColors.medicalBlue,
+                                          ),
+                                        ),
+                                      ),
+                                      if (isInRange) ...[
+                                        const SizedBox(height: 6),
+                                        Row(
+                                          children: [
+                                            const Icon(Icons.notifications_active, size: 12, color: AppColors.lifelineGreen),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              'Ambulance is within 500m — prepare for arrival',
+                                              style: AppTypography.caption.copyWith(
+                                                color: AppColors.lifelineGreen,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                // Accepted status + Patient Received button
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
                                   decoration: BoxDecoration(
                                     color: AppColors.lifelineGreen.withValues(alpha: 0.1),
                                     borderRadius: AppSpacing.borderRadiusSm,
                                     border: Border.all(color: AppColors.lifelineGreen.withValues(alpha: 0.3)),
                                   ),
                                   child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       const Icon(Icons.check_circle, size: 18, color: AppColors.lifelineGreen),
                                       const SizedBox(width: 8),
-                                      Text('Accepted — Preparing Bay',
-                                          style: AppTypography.bodyS.copyWith(color: AppColors.lifelineGreen, fontWeight: FontWeight.w600)),
-                                      const Spacer(),
-                                      GestureDetector(
-                                        onTap: () async {
-                                          await hp.confirmArrival(trip.id);
-                                          if (context.mounted) await hp.completeTrip(trip.id);
-                                        },
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.hospitalTeal,
-                                            borderRadius: AppSpacing.borderRadiusSm,
+                                      Expanded(
+                                        child: Text(
+                                          'Accepted — Preparing Bay',
+                                          style: AppTypography.bodyS.copyWith(
+                                            color: AppColors.lifelineGreen,
+                                            fontWeight: FontWeight.w600,
                                           ),
-                                          child: Text('Patient Received',
-                                              style: AppTypography.caption.copyWith(color: AppColors.white, fontWeight: FontWeight.w600)),
+                                        ),
+                                      ),
+                                      GestureDetector(
+                                        onTap: isInRange
+                                            ? () async {
+                                                await hp.confirmArrival(trip.id);
+                                                if (context.mounted) await hp.completeTrip(trip.id);
+                                              }
+                                            : null,
+                                        child: AnimatedOpacity(
+                                          opacity: isInRange ? 1.0 : 0.35,
+                                          duration: const Duration(milliseconds: 200),
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                            decoration: BoxDecoration(
+                                              color: isInRange ? AppColors.hospitalTeal : AppColors.mediumGray,
+                                              borderRadius: AppSpacing.borderRadiusSm,
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(
+                                                  isInRange ? Icons.done_all : Icons.lock_clock,
+                                                  size: 14,
+                                                  color: AppColors.white,
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  'Patient Received',
+                                                  style: AppTypography.caption.copyWith(
+                                                    color: AppColors.white,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
                                         ),
                                       ),
                                     ],
                                   ),
-                                )
-                              else if (isDeclined)
+                                ),
+                              ]
+
+                              // ── DECLINED STATE ──
+                              else if (isDeclined) ...[
                                 Container(
                                   width: double.infinity,
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
                                   decoration: BoxDecoration(
                                     color: AppColors.mediumGray.withValues(alpha: 0.1),
                                     borderRadius: AppSpacing.borderRadiusSm,
                                   ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      const Icon(Icons.close, size: 18, color: AppColors.mediumGray),
-                                      const SizedBox(width: 8),
-                                      Text('Declined — Rerouted',
-                                          style: AppTypography.bodyS.copyWith(color: AppColors.mediumGray)),
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.close, size: 18, color: AppColors.mediumGray),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            'Declined — Rerouted',
+                                            style: AppTypography.bodyS.copyWith(color: AppColors.mediumGray),
+                                          ),
+                                        ],
+                                      ),
+                                      if (_declineReasons.containsKey(trip.id)) ...[
+                                        const SizedBox(height: 6),
+                                        Row(
+                                          children: [
+                                            const SizedBox(width: 26),
+                                            Icon(Icons.notes, size: 13, color: AppColors.mediumGray.withValues(alpha: 0.7)),
+                                            const SizedBox(width: 4),
+                                            Expanded(
+                                              child: Text(
+                                                'Reason: ${_declineReasons[trip.id]}',
+                                                style: AppTypography.caption.copyWith(
+                                                  color: AppColors.mediumGray,
+                                                  fontStyle: FontStyle.italic,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
                                     ],
                                   ),
-                                )
+                                ),
+                              ]
+
+                              // ── NOT RESPONDED STATE ──
                               else
                                 Row(
                                   children: [
@@ -1124,6 +1679,33 @@ class _CrisisSlider extends StatelessWidget {
           child: Slider(
             value: value.toDouble(), min: 1, max: max.toDouble(), divisions: max - 1,
             onChanged: (v) => onChanged(v.round()),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SyncSummaryRow extends StatelessWidget {
+  final String label;
+  final String value;
+  const _SyncSummaryRow({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: AppTypography.caption.copyWith(color: AppColors.mediumGray)),
+        Flexible(
+          child: Text(
+            value,
+            style: AppTypography.bodyS.copyWith(
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+            textAlign: TextAlign.end,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],
