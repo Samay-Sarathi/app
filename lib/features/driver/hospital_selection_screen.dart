@@ -16,27 +16,32 @@ class HospitalSelectionScreen extends StatefulWidget {
 
 class _HospitalSelectionScreenState extends State<HospitalSelectionScreen> {
   GoogleMapController? _mapController;
+  late final Set<Marker> _markers;
 
-  Set<Marker> get _markers => {
-    Marker(
-      markerId: const MarkerId('recommended_hospital'),
-      position: MapConfig.centralHospital,
-      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-      infoWindow: const InfoWindow(title: 'Central Medical Center', snippet: 'Recommended'),
-    ),
-    Marker(
-      markerId: const MarkerId('other_hospital'),
-      position: MapConfig.cityHospital,
-      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueCyan),
-      infoWindow: const InfoWindow(title: 'City Hospital'),
-    ),
-    Marker(
-      markerId: const MarkerId('user'),
-      position: MapConfig.userLocation,
-      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-      infoWindow: const InfoWindow(title: 'You'),
-    ),
-  };
+  @override
+  void initState() {
+    super.initState();
+    _markers = {
+      Marker(
+        markerId: const MarkerId('recommended_hospital'),
+        position: MapConfig.centralHospital,
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+        infoWindow: const InfoWindow(title: 'Central Medical Center', snippet: 'Recommended'),
+      ),
+      Marker(
+        markerId: const MarkerId('other_hospital'),
+        position: MapConfig.cityHospital,
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueCyan),
+        infoWindow: const InfoWindow(title: 'City Hospital'),
+      ),
+      Marker(
+        markerId: const MarkerId('user'),
+        position: MapConfig.userLocation,
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+        infoWindow: const InfoWindow(title: 'You'),
+      ),
+    };
+  }
 
   @override
   void dispose() {
@@ -82,6 +87,7 @@ class _HospitalSelectionScreenState extends State<HospitalSelectionScreen> {
             child: GoogleMap(
               initialCameraPosition: MapConfig.overviewCamera,
               markers: _markers,
+              liteModeEnabled: true,
               myLocationEnabled: false,
               zoomControlsEnabled: false,
               mapToolbarEnabled: false,

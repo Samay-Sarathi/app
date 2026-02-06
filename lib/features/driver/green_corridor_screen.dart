@@ -18,31 +18,8 @@ class _GreenCorridorScreenState extends State<GreenCorridorScreen>
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
   GoogleMapController? _mapController;
-
-  Set<Marker> get _markers => {
-    Marker(
-      markerId: const MarkerId('hospital'),
-      position: MapConfig.centralHospital,
-      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-      infoWindow: const InfoWindow(title: 'Central Hospital'),
-    ),
-    Marker(
-      markerId: const MarkerId('ambulance'),
-      position: MapConfig.userLocation,
-      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-      infoWindow: const InfoWindow(title: 'Ambulance'),
-    ),
-  };
-
-  Set<Polyline> get _polylines => {
-    Polyline(
-      polylineId: const PolylineId('corridor_route'),
-      points: MapConfig.routeToHospital,
-      color: AppColors.lifelineGreen,
-      width: 6,
-      patterns: [PatternItem.dash(20), PatternItem.gap(10)],
-    ),
-  };
+  late final Set<Marker> _markers;
+  late final Set<Polyline> _polylines;
 
   @override
   void initState() {
@@ -54,6 +31,29 @@ class _GreenCorridorScreenState extends State<GreenCorridorScreen>
     _pulseAnimation = Tween<double>(begin: 0.3, end: 1.0).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
+    _markers = {
+      Marker(
+        markerId: const MarkerId('hospital'),
+        position: MapConfig.centralHospital,
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+        infoWindow: const InfoWindow(title: 'Central Hospital'),
+      ),
+      Marker(
+        markerId: const MarkerId('ambulance'),
+        position: MapConfig.userLocation,
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+        infoWindow: const InfoWindow(title: 'Ambulance'),
+      ),
+    };
+    _polylines = {
+      Polyline(
+        polylineId: const PolylineId('corridor_route'),
+        points: MapConfig.routeToHospital,
+        color: AppColors.lifelineGreen,
+        width: 6,
+        patterns: [PatternItem.dash(20), PatternItem.gap(10)],
+      ),
+    };
   }
 
   @override
@@ -116,6 +116,7 @@ class _GreenCorridorScreenState extends State<GreenCorridorScreen>
                     markers: _markers,
                     polylines: _polylines,
                     style: MapConfig.darkMapStyle,
+                    liteModeEnabled: true,
                     myLocationEnabled: false,
                     zoomControlsEnabled: false,
                     mapToolbarEnabled: false,

@@ -17,30 +17,35 @@ class AmbulanceSyncScreen extends StatefulWidget {
 
 class _AmbulanceSyncScreenState extends State<AmbulanceSyncScreen> {
   GoogleMapController? _mapController;
+  late final Set<Marker> _markers;
+  late final Set<Polyline> _polylines;
 
-  Set<Marker> get _markers => {
-    Marker(
-      markerId: const MarkerId('ambulance'),
-      position: MapConfig.ambulanceA01,
-      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-      infoWindow: const InfoWindow(title: 'Ambulance A-01'),
-    ),
-    Marker(
-      markerId: const MarkerId('hospital'),
-      position: MapConfig.centralHospital,
-      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-      infoWindow: const InfoWindow(title: 'Central Hospital'),
-    ),
-  };
-
-  Set<Polyline> get _polylines => {
-    const Polyline(
-      polylineId: PolylineId('sync_route'),
-      points: MapConfig.ambulanceSyncRoute,
-      color: AppColors.lifelineGreen,
-      width: 3,
-    ),
-  };
+  @override
+  void initState() {
+    super.initState();
+    _markers = {
+      Marker(
+        markerId: const MarkerId('ambulance'),
+        position: MapConfig.ambulanceA01,
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+        infoWindow: const InfoWindow(title: 'Ambulance A-01'),
+      ),
+      Marker(
+        markerId: const MarkerId('hospital'),
+        position: MapConfig.centralHospital,
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+        infoWindow: const InfoWindow(title: 'Central Hospital'),
+      ),
+    };
+    _polylines = {
+      const Polyline(
+        polylineId: PolylineId('sync_route'),
+        points: MapConfig.ambulanceSyncRoute,
+        color: AppColors.lifelineGreen,
+        width: 3,
+      ),
+    };
+  }
 
   @override
   void dispose() {

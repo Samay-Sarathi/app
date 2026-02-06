@@ -206,45 +206,50 @@ class _MapTab extends StatefulWidget {
 
 class _MapTabState extends State<_MapTab> {
   GoogleMapController? _mapController;
+  late final Set<Marker> _markers;
 
-  Set<Marker> get _markers => {
-    Marker(
-      markerId: const MarkerId('ambulance_a01'),
-      position: MapConfig.ambulanceA01,
-      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
-      infoWindow: const InfoWindow(title: 'A-01', snippet: 'Active'),
-    ),
-    Marker(
-      markerId: const MarkerId('ambulance_a02'),
-      position: MapConfig.ambulanceA02,
-      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
-      infoWindow: const InfoWindow(title: 'A-02', snippet: 'Active'),
-    ),
-    Marker(
-      markerId: const MarkerId('ambulance_a03'),
-      position: MapConfig.ambulanceA03,
-      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
-      infoWindow: const InfoWindow(title: 'A-03', snippet: 'Idle'),
-    ),
-    Marker(
-      markerId: const MarkerId('central_hospital'),
-      position: MapConfig.centralHospital,
-      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-      infoWindow: const InfoWindow(title: 'Central Hospital'),
-    ),
-    Marker(
-      markerId: const MarkerId('city_hospital'),
-      position: MapConfig.cityHospital,
-      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-      infoWindow: const InfoWindow(title: 'City Hospital'),
-    ),
-    Marker(
-      markerId: const MarkerId('user'),
-      position: MapConfig.userLocation,
-      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-      infoWindow: const InfoWindow(title: 'You'),
-    ),
-  };
+  @override
+  void initState() {
+    super.initState();
+    _markers = {
+      Marker(
+        markerId: const MarkerId('ambulance_a01'),
+        position: MapConfig.ambulanceA01,
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+        infoWindow: const InfoWindow(title: 'A-01', snippet: 'Active'),
+      ),
+      Marker(
+        markerId: const MarkerId('ambulance_a02'),
+        position: MapConfig.ambulanceA02,
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+        infoWindow: const InfoWindow(title: 'A-02', snippet: 'Active'),
+      ),
+      Marker(
+        markerId: const MarkerId('ambulance_a03'),
+        position: MapConfig.ambulanceA03,
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
+        infoWindow: const InfoWindow(title: 'A-03', snippet: 'Idle'),
+      ),
+      Marker(
+        markerId: const MarkerId('central_hospital'),
+        position: MapConfig.centralHospital,
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+        infoWindow: const InfoWindow(title: 'Central Hospital'),
+      ),
+      Marker(
+        markerId: const MarkerId('city_hospital'),
+        position: MapConfig.cityHospital,
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+        infoWindow: const InfoWindow(title: 'City Hospital'),
+      ),
+      Marker(
+        markerId: const MarkerId('user'),
+        position: MapConfig.userLocation,
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+        infoWindow: const InfoWindow(title: 'You'),
+      ),
+    };
+  }
 
   @override
   void dispose() {
@@ -276,6 +281,7 @@ class _MapTabState extends State<_MapTab> {
                 initialCameraPosition: MapConfig.overviewCamera,
                 markers: _markers,
                 style: MapConfig.darkMapStyle,
+                liteModeEnabled: true,
                 myLocationEnabled: false,
                 zoomControlsEnabled: false,
                 mapToolbarEnabled: false,

@@ -16,30 +16,35 @@ class NavigationScreen extends StatefulWidget {
 
 class _NavigationScreenState extends State<NavigationScreen> {
   GoogleMapController? _mapController;
+  late final Set<Marker> _markers;
+  late final Set<Polyline> _polylines;
 
-  Set<Marker> get _markers => {
-    Marker(
-      markerId: const MarkerId('hospital'),
-      position: MapConfig.centralHospital,
-      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-      infoWindow: const InfoWindow(title: 'Central Hospital'),
-    ),
-    Marker(
-      markerId: const MarkerId('user'),
-      position: MapConfig.userLocation,
-      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-      infoWindow: const InfoWindow(title: 'You'),
-    ),
-  };
-
-  Set<Polyline> get _polylines => {
-    const Polyline(
-      polylineId: PolylineId('route'),
-      points: MapConfig.routeToHospital,
-      color: AppColors.lifelineGreen,
-      width: 5,
-    ),
-  };
+  @override
+  void initState() {
+    super.initState();
+    _markers = {
+      Marker(
+        markerId: const MarkerId('hospital'),
+        position: MapConfig.centralHospital,
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+        infoWindow: const InfoWindow(title: 'Central Hospital'),
+      ),
+      Marker(
+        markerId: const MarkerId('user'),
+        position: MapConfig.userLocation,
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+        infoWindow: const InfoWindow(title: 'You'),
+      ),
+    };
+    _polylines = {
+      const Polyline(
+        polylineId: PolylineId('route'),
+        points: MapConfig.routeToHospital,
+        color: AppColors.lifelineGreen,
+        width: 5,
+      ),
+    };
+  }
 
   @override
   void dispose() {
@@ -102,6 +107,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
                   markers: _markers,
                   polylines: _polylines,
                   style: MapConfig.darkMapStyle,
+                  liteModeEnabled: true,
                   myLocationEnabled: false,
                   zoomControlsEnabled: false,
                   mapToolbarEnabled: false,
