@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
+import '../../core/config/app_config.dart';
 import '../../core/map/map_config.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
@@ -10,6 +11,7 @@ import '../../core/providers/settings_provider.dart';
 import '../../widgets/status_badge.dart';
 import '../../widgets/info_card.dart';
 import '../../widgets/bottom_nav.dart';
+import '../../core/widgets/map_placeholder.dart';
 
 class DriverDashboardScreen extends StatefulWidget {
   const DriverDashboardScreen({super.key});
@@ -211,44 +213,48 @@ class _MapTabState extends State<_MapTab> {
   @override
   void initState() {
     super.initState();
-    _markers = {
-      Marker(
-        markerId: const MarkerId('ambulance_a01'),
-        position: MapConfig.ambulanceA01,
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
-        infoWindow: const InfoWindow(title: 'A-01', snippet: 'Active'),
-      ),
-      Marker(
-        markerId: const MarkerId('ambulance_a02'),
-        position: MapConfig.ambulanceA02,
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
-        infoWindow: const InfoWindow(title: 'A-02', snippet: 'Active'),
-      ),
-      Marker(
-        markerId: const MarkerId('ambulance_a03'),
-        position: MapConfig.ambulanceA03,
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
-        infoWindow: const InfoWindow(title: 'A-03', snippet: 'Idle'),
-      ),
-      Marker(
-        markerId: const MarkerId('central_hospital'),
-        position: MapConfig.centralHospital,
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-        infoWindow: const InfoWindow(title: 'Central Hospital'),
-      ),
-      Marker(
-        markerId: const MarkerId('city_hospital'),
-        position: MapConfig.cityHospital,
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-        infoWindow: const InfoWindow(title: 'City Hospital'),
-      ),
-      Marker(
-        markerId: const MarkerId('user'),
-        position: MapConfig.userLocation,
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-        infoWindow: const InfoWindow(title: 'You'),
-      ),
-    };
+    if (AppConfig.enableMaps) {
+      _markers = {
+        Marker(
+          markerId: const MarkerId('ambulance_a01'),
+          position: MapConfig.ambulanceA01,
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+          infoWindow: const InfoWindow(title: 'A-01', snippet: 'Active'),
+        ),
+        Marker(
+          markerId: const MarkerId('ambulance_a02'),
+          position: MapConfig.ambulanceA02,
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+          infoWindow: const InfoWindow(title: 'A-02', snippet: 'Active'),
+        ),
+        Marker(
+          markerId: const MarkerId('ambulance_a03'),
+          position: MapConfig.ambulanceA03,
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
+          infoWindow: const InfoWindow(title: 'A-03', snippet: 'Idle'),
+        ),
+        Marker(
+          markerId: const MarkerId('central_hospital'),
+          position: MapConfig.centralHospital,
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+          infoWindow: const InfoWindow(title: 'Central Hospital'),
+        ),
+        Marker(
+          markerId: const MarkerId('city_hospital'),
+          position: MapConfig.cityHospital,
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+          infoWindow: const InfoWindow(title: 'City Hospital'),
+        ),
+        Marker(
+          markerId: const MarkerId('user'),
+          position: MapConfig.userLocation,
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+          infoWindow: const InfoWindow(title: 'You'),
+        ),
+      };
+    } else {
+      _markers = {};
+    }
   }
 
   @override
@@ -277,18 +283,20 @@ class _MapTabState extends State<_MapTab> {
           Expanded(
             child: ClipRRect(
               borderRadius: AppSpacing.borderRadiusLg,
-              child: GoogleMap(
-                initialCameraPosition: MapConfig.overviewCamera,
-                markers: _markers,
-                style: MapConfig.darkMapStyle,
-                liteModeEnabled: true,
-                myLocationEnabled: false,
-                zoomControlsEnabled: false,
-                mapToolbarEnabled: false,
-                onMapCreated: (controller) {
-                  _mapController = controller;
-                },
-              ),
+              child: AppConfig.enableMaps
+                  ? GoogleMap(
+                      initialCameraPosition: MapConfig.overviewCamera,
+                      markers: _markers,
+                      style: MapConfig.darkMapStyle,
+                      liteModeEnabled: true,
+                      myLocationEnabled: false,
+                      zoomControlsEnabled: false,
+                      mapToolbarEnabled: false,
+                      onMapCreated: (controller) {
+                        _mapController = controller;
+                      },
+                    )
+                  : MapPlaceholder.overview(),
             ),
           ),
           const SizedBox(height: 8),

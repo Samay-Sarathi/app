@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import '../../core/config/app_config.dart';
 import '../../core/map/map_config.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../widgets/info_card.dart';
+import '../../core/widgets/map_placeholder.dart';
 
 class NavigationScreen extends StatefulWidget {
   const NavigationScreen({super.key});
@@ -22,28 +24,33 @@ class _NavigationScreenState extends State<NavigationScreen> {
   @override
   void initState() {
     super.initState();
-    _markers = {
-      Marker(
-        markerId: const MarkerId('hospital'),
-        position: MapConfig.centralHospital,
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-        infoWindow: const InfoWindow(title: 'Central Hospital'),
-      ),
-      Marker(
-        markerId: const MarkerId('user'),
-        position: MapConfig.userLocation,
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-        infoWindow: const InfoWindow(title: 'You'),
-      ),
-    };
-    _polylines = {
-      const Polyline(
-        polylineId: PolylineId('route'),
-        points: MapConfig.routeToHospital,
-        color: AppColors.lifelineGreen,
-        width: 5,
-      ),
-    };
+    if (AppConfig.enableMaps) {
+      _markers = {
+        Marker(
+          markerId: const MarkerId('hospital'),
+          position: MapConfig.centralHospital,
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+          infoWindow: const InfoWindow(title: 'Central Hospital'),
+        ),
+        Marker(
+          markerId: const MarkerId('user'),
+          position: MapConfig.userLocation,
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+          infoWindow: const InfoWindow(title: 'You'),
+        ),
+      };
+      _polylines = {
+        const Polyline(
+          polylineId: PolylineId('route'),
+          points: MapConfig.routeToHospital,
+          color: AppColors.lifelineGreen,
+          width: 5,
+        ),
+      };
+    } else {
+      _markers = {};
+      _polylines = {};
+    }
   }
 
   @override
@@ -100,22 +107,24 @@ class _NavigationScreenState extends State<NavigationScreen> {
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.spaceMd),
-              child: ClipRRect(
-                borderRadius: AppSpacing.borderRadiusLg,
-                child: GoogleMap(
-                  initialCameraPosition: MapConfig.navigationCamera,
-                  markers: _markers,
-                  polylines: _polylines,
-                  style: MapConfig.darkMapStyle,
-                  liteModeEnabled: true,
-                  myLocationEnabled: false,
-                  zoomControlsEnabled: false,
-                  mapToolbarEnabled: false,
-                  onMapCreated: (controller) {
-                    _mapController = controller;
-                  },
-                ),
-              ),
+              child: AppConfig.enableMaps
+                  ? ClipRRect(
+                      borderRadius: AppSpacing.borderRadiusLg,
+                      child: GoogleMap(
+                        initialCameraPosition: MapConfig.navigationCamera,
+                        markers: _markers,
+                        polylines: _polylines,
+                        style: MapConfig.darkMapStyle,
+                        liteModeEnabled: true,
+                        myLocationEnabled: false,
+                        zoomControlsEnabled: false,
+                        mapToolbarEnabled: false,
+                        onMapCreated: (controller) {
+                          _mapController = controller;
+                        },
+                      ),
+                    )
+                  : MapPlaceholder.navigation(),
             ),
           ),
 

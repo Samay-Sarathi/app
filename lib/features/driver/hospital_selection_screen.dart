@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import '../../core/config/app_config.dart';
 import '../../core/map/map_config.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../widgets/buttons.dart';
+import '../../core/widgets/map_placeholder.dart';
 
 class HospitalSelectionScreen extends StatefulWidget {
   const HospitalSelectionScreen({super.key});
@@ -21,26 +23,30 @@ class _HospitalSelectionScreenState extends State<HospitalSelectionScreen> {
   @override
   void initState() {
     super.initState();
-    _markers = {
-      Marker(
-        markerId: const MarkerId('recommended_hospital'),
-        position: MapConfig.centralHospital,
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-        infoWindow: const InfoWindow(title: 'Central Medical Center', snippet: 'Recommended'),
-      ),
-      Marker(
-        markerId: const MarkerId('other_hospital'),
-        position: MapConfig.cityHospital,
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueCyan),
-        infoWindow: const InfoWindow(title: 'City Hospital'),
-      ),
-      Marker(
-        markerId: const MarkerId('user'),
-        position: MapConfig.userLocation,
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-        infoWindow: const InfoWindow(title: 'You'),
-      ),
-    };
+    if (AppConfig.enableMaps) {
+      _markers = {
+        Marker(
+          markerId: const MarkerId('recommended_hospital'),
+          position: MapConfig.centralHospital,
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+          infoWindow: const InfoWindow(title: 'Central Medical Center', snippet: 'Recommended'),
+        ),
+        Marker(
+          markerId: const MarkerId('other_hospital'),
+          position: MapConfig.cityHospital,
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueCyan),
+          infoWindow: const InfoWindow(title: 'City Hospital'),
+        ),
+        Marker(
+          markerId: const MarkerId('user'),
+          position: MapConfig.userLocation,
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+          infoWindow: const InfoWindow(title: 'You'),
+        ),
+      };
+    } else {
+      _markers = {};
+    }
   }
 
   @override
@@ -84,17 +90,19 @@ class _HospitalSelectionScreenState extends State<HospitalSelectionScreen> {
           // Map
           Expanded(
             flex: 3,
-            child: GoogleMap(
-              initialCameraPosition: MapConfig.overviewCamera,
-              markers: _markers,
-              liteModeEnabled: true,
-              myLocationEnabled: false,
-              zoomControlsEnabled: false,
-              mapToolbarEnabled: false,
-              onMapCreated: (controller) {
-                _mapController = controller;
-              },
-            ),
+            child: AppConfig.enableMaps
+                ? GoogleMap(
+                    initialCameraPosition: MapConfig.overviewCamera,
+                    markers: _markers,
+                    liteModeEnabled: true,
+                    myLocationEnabled: false,
+                    zoomControlsEnabled: false,
+                    mapToolbarEnabled: false,
+                    onMapCreated: (controller) {
+                      _mapController = controller;
+                    },
+                  )
+                : MapPlaceholder.hospitalSelect(),
           ),
 
           // Hospital info card

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import '../../core/config/app_config.dart';
 import '../../core/map/map_config.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/widgets/map_placeholder.dart';
 import '../../widgets/buttons.dart';
 import '../../widgets/status_badge.dart';
 
@@ -23,28 +25,33 @@ class _AmbulanceSyncScreenState extends State<AmbulanceSyncScreen> {
   @override
   void initState() {
     super.initState();
-    _markers = {
-      Marker(
-        markerId: const MarkerId('ambulance'),
-        position: MapConfig.ambulanceA01,
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-        infoWindow: const InfoWindow(title: 'Ambulance A-01'),
-      ),
-      Marker(
-        markerId: const MarkerId('hospital'),
-        position: MapConfig.centralHospital,
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-        infoWindow: const InfoWindow(title: 'Central Hospital'),
-      ),
-    };
-    _polylines = {
-      const Polyline(
-        polylineId: PolylineId('sync_route'),
-        points: MapConfig.ambulanceSyncRoute,
-        color: AppColors.lifelineGreen,
-        width: 3,
-      ),
-    };
+    if (AppConfig.enableMaps) {
+      _markers = {
+        Marker(
+          markerId: const MarkerId('ambulance'),
+          position: MapConfig.ambulanceA01,
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+          infoWindow: const InfoWindow(title: 'Ambulance A-01'),
+        ),
+        Marker(
+          markerId: const MarkerId('hospital'),
+          position: MapConfig.centralHospital,
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+          infoWindow: const InfoWindow(title: 'Central Hospital'),
+        ),
+      };
+      _polylines = {
+        const Polyline(
+          polylineId: PolylineId('sync_route'),
+          points: MapConfig.ambulanceSyncRoute,
+          color: AppColors.lifelineGreen,
+          width: 3,
+        ),
+      };
+    } else {
+      _markers = {};
+      _polylines = {};
+    }
   }
 
   @override
@@ -98,18 +105,20 @@ class _AmbulanceSyncScreenState extends State<AmbulanceSyncScreen> {
                 width: double.infinity,
                 child: ClipRRect(
                   borderRadius: AppSpacing.borderRadiusLg,
-                  child: GoogleMap(
-                    initialCameraPosition: MapConfig.syncCamera,
-                    markers: _markers,
-                    polylines: _polylines,
-                    liteModeEnabled: true,
-                    myLocationEnabled: false,
-                    zoomControlsEnabled: false,
-                    mapToolbarEnabled: false,
-                    onMapCreated: (controller) {
-                      _mapController = controller;
-                    },
-                  ),
+                  child: AppConfig.enableMaps
+                      ? GoogleMap(
+                          initialCameraPosition: MapConfig.syncCamera,
+                          markers: _markers,
+                          polylines: _polylines,
+                          liteModeEnabled: true,
+                          myLocationEnabled: false,
+                          zoomControlsEnabled: false,
+                          mapToolbarEnabled: false,
+                          onMapCreated: (controller) {
+                            _mapController = controller;
+                          },
+                        )
+                      : MapPlaceholder.ambulanceSync(),
                 ),
               ),
               const SizedBox(height: 16),
