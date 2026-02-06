@@ -111,6 +111,21 @@ class _SignInScreenState extends State<SignInScreen>
 
   bool get _isAdmin => widget.role == 'admin';
 
+  String get _devCredentialHint {
+    switch (widget.role) {
+      case 'driver':
+        return 'Dev: +919999999999 • password123';
+      case 'hospital':
+        return 'Dev: +918888888888 • password123';
+      case 'police':
+        return 'Dev: +917777777777 • password123';
+      case 'admin':
+        return 'Dev: +916666666666 • password123';
+      default:
+        return 'Dev: phone + password123';
+    }
+  }
+
   // ── Actions ──
 
   Future<void> _handleLogin() async {
@@ -270,8 +285,7 @@ class _SignInScreenState extends State<SignInScreen>
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          'Dev mode — use seed credentials\n'
-                          'Phone: +9191000000XX  •  Pass: password123',
+                          _devCredentialHint,
                           style: AppTypography.caption.copyWith(
                             color: _roleColor,
                             fontWeight: FontWeight.w500,
