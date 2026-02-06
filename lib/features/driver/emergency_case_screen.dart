@@ -15,6 +15,8 @@ class EmergencyCaseScreen extends StatelessWidget {
     _CaseType(icon: Icons.pregnant_woman, label: 'Pregnancy\nEmergency', color: AppColors.calmPurple, incidentType: IncidentType.obstetric),
     _CaseType(icon: Icons.psychology, label: 'Stroke', color: AppColors.emergencyRed, incidentType: IncidentType.stroke),
     _CaseType(icon: Icons.air, label: 'Breathing\nIssue', color: AppColors.medicalBlue, incidentType: IncidentType.respiratory),
+    _CaseType(icon: Icons.accessibility_new, label: 'Fracture /\nTrauma', color: AppColors.hospitalTeal, incidentType: IncidentType.pediatric),
+    _CaseType(icon: Icons.more_horiz, label: 'Other', color: AppColors.mediumGray, incidentType: IncidentType.other),
   ];
 
   @override
@@ -69,7 +71,7 @@ class EmergencyCaseScreen extends StatelessWidget {
                   crossAxisCount: 2,
                   mainAxisSpacing: 16,
                   crossAxisSpacing: 16,
-                  childAspectRatio: 1.3,
+                  childAspectRatio: 1.2,
                   children: _cases.map((c) {
                     return _CaseCard(
                       caseType: c,

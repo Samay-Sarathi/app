@@ -72,6 +72,81 @@ class _HospitalSelectionScreenState extends State<HospitalSelectionScreen> {
   }
 
   Future<void> _selectHospital(BuildContext context, HospitalRecommendation hospital) async {
+    // Show confirmation dialog before proceeding
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: AppSpacing.borderRadiusLg),
+        title: Row(
+          children: [
+            const Icon(Icons.local_hospital, color: AppColors.emergencyRed),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Confirm Hospital',
+                style: AppTypography.heading3,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              hospital.hospitalName,
+              style: AppTypography.body.copyWith(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 12),
+            _ConfirmInfoRow(icon: Icons.timer, text: 'ETA: ${hospital.etaMinutes} minutes'),
+            const SizedBox(height: 6),
+            _ConfirmInfoRow(icon: Icons.bed, text: '${hospital.bedAvailable} beds available'),
+            const SizedBox(height: 6),
+            _ConfirmInfoRow(icon: Icons.route, text: '${hospital.distanceKm.toStringAsFixed(1)} km away'),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.warmOrange.withValues(alpha: 0.1),
+                borderRadius: AppSpacing.borderRadiusSm,
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.info_outline, size: 18, color: AppColors.warmOrange),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Your live location will be shared with the hospital and traffic police. A QR code will be generated for paramedic handoff.',
+                      style: AppTypography.caption.copyWith(color: AppColors.warmOrange),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text('Cancel', style: AppTypography.bodyS.copyWith(color: AppColors.mediumGray)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.lifelineGreen,
+              foregroundColor: AppColors.white,
+              shape: RoundedRectangleBorder(borderRadius: AppSpacing.borderRadiusSm),
+            ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Confirm & Navigate'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
     final tripProvider = context.read<TripProvider>();
     final messenger = ScaffoldMessenger.of(context);
     final nav = GoRouter.of(context);
@@ -344,6 +419,25 @@ class _InfoChip extends StatelessWidget {
         Icon(icon, size: 18, color: AppColors.mediumGray),
         const SizedBox(width: 4),
         Text(label, style: AppTypography.bodyS.copyWith(color: AppColors.mediumGray)),
+      ],
+    );
+  }
+}
+
+class _ConfirmInfoRow extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  const _ConfirmInfoRow({required this.icon, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: AppColors.mediumGray),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(text, style: AppTypography.bodyS.copyWith(color: AppColors.mediumGray)),
+        ),
       ],
     );
   }

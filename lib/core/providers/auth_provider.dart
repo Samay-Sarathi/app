@@ -43,7 +43,7 @@ class AuthProvider extends ChangeNotifier {
       case UserRole.hospital:
         return '/hospital/capacity';
       case UserRole.police:
-        return '/driver/dashboard'; // TODO: police dashboard
+        return '/police/dashboard';
       case UserRole.admin:
         return '/admin/dashboard';
       case UserRole.paramedic:

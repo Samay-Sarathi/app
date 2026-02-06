@@ -14,6 +14,7 @@ import '../features/hospital/emergency_alert_screen.dart';
 import '../features/hospital/ambulance_sync_screen.dart';
 import '../features/hospital/hospital_capacity_screen.dart';
 import '../features/admin/admin_dashboard_screen.dart';
+import '../features/police/police_dashboard_screen.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
@@ -104,6 +105,12 @@ class AppRouter {
       GoRoute(
         path: '/admin/dashboard',
         builder: (context, state) => const AdminDashboardScreen(),
+      ),
+
+      // Police routes
+      GoRoute(
+        path: '/police/dashboard',
+        builder: (context, state) => const PoliceDashboardScreen(),
       ),
     ],
   );
