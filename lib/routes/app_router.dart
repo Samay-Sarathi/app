@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 import '../features/splash/splash_screen.dart';
 import '../features/auth/role_selection_screen.dart';
 import '../features/auth/sign_in_screen.dart';
+import '../features/auth/register_screen.dart';
 import '../features/driver/driver_dashboard_screen.dart';
 import '../features/driver/emergency_case_screen.dart';
 import '../features/driver/severity_rating_screen.dart';
@@ -33,6 +34,13 @@ class AppRouter {
           return SignInScreen(role: role);
         },
       ),
+      GoRoute(
+        path: '/register',
+        builder: (context, state) {
+          final role = state.extra as String? ?? 'driver';
+          return RegisterScreen(role: role);
+        },
+      ),
 
       // Driver routes
       GoRoute(
@@ -46,8 +54,19 @@ class AppRouter {
       GoRoute(
         path: '/driver/severity',
         builder: (context, state) {
-          final caseType = state.extra as String? ?? 'Heart Attack';
-          return SeverityRatingScreen(caseType: caseType);
+          final extra = state.extra;
+          String caseType = 'Heart Attack';
+          String incidentType = 'CARDIAC';
+          if (extra is Map<String, dynamic>) {
+            caseType = extra['label'] as String? ?? 'Heart Attack';
+            incidentType = extra['incidentType'] as String? ?? 'CARDIAC';
+          } else if (extra is String) {
+            caseType = extra;
+          }
+          return SeverityRatingScreen(
+            caseType: caseType,
+            incidentType: incidentType,
+          );
         },
       ),
       GoRoute(

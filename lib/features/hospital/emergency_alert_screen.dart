@@ -7,6 +7,8 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/providers/settings_provider.dart';
+import '../../core/providers/hospital_provider.dart';
+import '../../core/models/trip.dart';
 
 class EmergencyAlertScreen extends StatefulWidget {
   const EmergencyAlertScreen({super.key});
@@ -59,6 +61,12 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen>
 
   @override
   Widget build(BuildContext context) {
+    final hp = context.watch<HospitalProvider>();
+    final Trip? incomingTrip = hp.incomingTrips.isNotEmpty ? hp.incomingTrips.first : null;
+    final incidentLabel = incomingTrip?.incidentType.label ?? 'Cardiac';
+    final driverName = incomingTrip?.driverName ?? 'Ambulance';
+    final hospitalName = incomingTrip?.hospitalName ?? 'Hospital';
+
     return Scaffold(
       backgroundColor: AppColors.emergencyRed,
       body: SafeArea(
@@ -123,7 +131,7 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen>
               ),
               const SizedBox(height: 8),
               Text(
-                'Ambulance Alpha-01',
+                driverName,
                 style: AppTypography.bodyL.copyWith(
                   color: AppColors.white.withValues(alpha: 0.9),
                 ),
@@ -140,11 +148,11 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen>
                 ),
                 child: Column(
                   children: [
-                    _DetailRow(icon: Icons.local_hospital, text: 'City Central Hospital'),
+                    _DetailRow(icon: Icons.local_hospital, text: hospitalName),
                     const SizedBox(height: 12),
-                    _DetailRow(icon: Icons.favorite, text: 'Cardiac - Stable'),
+                    _DetailRow(icon: Icons.favorite, text: '$incidentLabel - Severity ${incomingTrip?.severity ?? "?"}'),
                     const SizedBox(height: 12),
-                    _DetailRow(icon: Icons.location_on, text: 'Outer Ring Road'),
+                    _DetailRow(icon: Icons.location_on, text: 'Pickup Location'),
                   ],
                 ),
               ),
@@ -176,7 +184,12 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen>
                     child: SizedBox(
                       height: 56,
                       child: OutlinedButton(
-                        onPressed: () => context.go('/hospital/capacity'),
+                        onPressed: () async {
+                          if (incomingTrip != null) {
+                            await hp.rejectTrip(incomingTrip.id, 'Capacity full');
+                          }
+                          if (context.mounted) context.go('/hospital/capacity');
+                        },
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.white,
                           side: const BorderSide(color: AppColors.white, width: 1.5),

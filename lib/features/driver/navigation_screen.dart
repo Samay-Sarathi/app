@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:provider/provider.dart';
 import '../../core/config/app_config.dart';
 import '../../core/map/map_config.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/providers/trip_provider.dart';
 import '../../widgets/info_card.dart';
 import '../../core/widgets/map_placeholder.dart';
 
@@ -61,6 +63,14 @@ class _NavigationScreenState extends State<NavigationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tripProvider = context.watch<TripProvider>();
+    final trip = tripProvider.activeTrip;
+    final handshake = tripProvider.handshakeResult;
+    final etaMin = trip?.etaSeconds != null
+        ? (trip!.etaSeconds! / 60).ceil()
+        : 0;
+    final etaDisplay = etaMin > 0 ? '$etaMin:00' : '—';
+
     return Scaffold(
       backgroundColor: AppColors.commandDark,
       body: Column(
@@ -76,9 +86,27 @@ class _NavigationScreenState extends State<NavigationScreen> {
                     onTap: () => context.go('/driver/hospital-select'),
                     child: const Icon(Icons.arrow_back, color: AppColors.white),
                   ),
+                  if (handshake != null) ...[
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        handshake.hospitalName,
+                        style: AppTypography.bodyS.copyWith(
+                          color: AppColors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                   const Spacer(),
                   GestureDetector(
-                    onTap: () => context.go('/driver/green-corridor'),
+                    onTap: () async {
+                      final success = await context.read<TripProvider>().startEnRoute();
+                      if (success && context.mounted) {
+                        context.go('/driver/green-corridor');
+                      }
+                    },
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
@@ -134,11 +162,11 @@ class _NavigationScreenState extends State<NavigationScreen> {
             child: Row(
               children: [
                 Expanded(
-                  child: DarkInfoCard(value: '2:15', title: 'ETA (min)', accentColor: AppColors.lifelineGreen),
+                  child: DarkInfoCard(value: etaDisplay, title: 'ETA (min)', accentColor: AppColors.lifelineGreen),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: DarkInfoCard(value: '92', title: 'Speed (kph)', accentColor: AppColors.medicalBlue),
+                  child: DarkInfoCard(value: '—', title: 'Speed (kph)', accentColor: AppColors.medicalBlue),
                 ),
               ],
             ),

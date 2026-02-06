@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/providers/trip_provider.dart';
 import '../../widgets/buttons.dart';
 
 class SeverityRatingScreen extends StatefulWidget {
   final String caseType;
-  const SeverityRatingScreen({super.key, required this.caseType});
+  final String incidentType; // backend IncidentType value e.g. "CARDIAC"
+  const SeverityRatingScreen({
+    super.key,
+    required this.caseType,
+    this.incidentType = 'CARDIAC',
+  });
 
   @override
   State<SeverityRatingScreen> createState() => _SeverityRatingScreenState();
@@ -21,6 +28,52 @@ class _SeverityRatingScreenState extends State<SeverityRatingScreen> {
     if (_severity >= 7) return AppColors.emergencyRed;
     if (_severity >= 4) return AppColors.warmOrange;
     return AppColors.softYellow;
+  }
+
+  Future<void> _findHospital(BuildContext context) async {
+    final tripProvider = context.read<TripProvider>();
+    final messenger = ScaffoldMessenger.of(context);
+    final nav = GoRouter.of(context);
+
+    // Use mock pickup coordinates (Delhi center — replace with real GPS later)
+    const pickupLat = 28.6139;
+    const pickupLng = 77.2090;
+
+    // Step 1: Create trip
+    final created = await tripProvider.createTrip(
+      incidentType: widget.incidentType,
+      severity: _severity.round(),
+      pickupLatitude: pickupLat,
+      pickupLongitude: pickupLng,
+    );
+
+    if (!mounted) return;
+
+    if (!created) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(tripProvider.error ?? 'Failed to create trip'),
+          backgroundColor: AppColors.emergencyRed,
+        ),
+      );
+      return;
+    }
+
+    // Step 2: Fetch recommendations
+    final fetched = await tripProvider.fetchRecommendations();
+    if (!mounted) return;
+
+    if (!fetched) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(tripProvider.error ?? 'Failed to get recommendations'),
+          backgroundColor: AppColors.emergencyRed,
+        ),
+      );
+      // Still navigate — screen will show empty/error state
+    }
+
+    nav.go('/driver/hospital-select');
   }
 
   @override
@@ -151,9 +204,14 @@ class _SeverityRatingScreenState extends State<SeverityRatingScreen> {
               const Spacer(),
 
               PrimaryButton(
-                label: 'Find Best Hospital',
+                label: context.watch<TripProvider>().isLoading
+                    ? 'Finding hospitals...'
+                    : 'Find Best Hospital',
                 icon: Icons.local_hospital,
-                onPressed: () => context.go('/driver/hospital-select'),
+                isLoading: context.watch<TripProvider>().isLoading,
+                onPressed: context.watch<TripProvider>().isLoading
+                    ? null
+                    : () => _findHospital(context),
               ),
             ],
           ),

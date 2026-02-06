@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:provider/provider.dart';
 import '../../core/config/app_config.dart';
 import '../../core/map/map_config.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/providers/trip_provider.dart';
 import '../../core/widgets/map_placeholder.dart';
 
 class GreenCorridorScreen extends StatefulWidget {
@@ -72,6 +74,12 @@ class _GreenCorridorScreenState extends State<GreenCorridorScreen>
 
   @override
   Widget build(BuildContext context) {
+    final tripProvider = context.watch<TripProvider>();
+    final trip = tripProvider.activeTrip;
+    final etaMin = trip?.etaSeconds != null
+        ? (trip!.etaSeconds! / 60).ceil()
+        : 8;
+
     return Scaffold(
       backgroundColor: AppColors.commandDark,
       body: SafeArea(
@@ -150,7 +158,7 @@ class _GreenCorridorScreenState extends State<GreenCorridorScreen>
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '8 MIN',
+                          '$etaMin MIN',
                           style: AppTypography.heading1.copyWith(color: AppColors.lifelineGreen),
                         ),
                       ],
@@ -248,7 +256,10 @@ class _GreenCorridorScreenState extends State<GreenCorridorScreen>
                 width: double.infinity,
                 height: 52,
                 child: OutlinedButton.icon(
-                  onPressed: () => context.go('/driver/triage'),
+                  onPressed: () async {
+                    // Navigate to triage (trip stays active — hospital will complete it)
+                    context.go('/driver/triage');
+                  },
                   icon: const Icon(Icons.warning_amber, size: 20),
                   label: const Text('End Emergency Case', style: TextStyle(fontWeight: FontWeight.w600)),
                   style: OutlinedButton.styleFrom(

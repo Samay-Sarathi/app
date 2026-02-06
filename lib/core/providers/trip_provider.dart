@@ -1,0 +1,197 @@
+import 'package:flutter/foundation.dart';
+import 'package:uuid/uuid.dart';
+import '../models/trip.dart';
+import '../models/hospital_recommendation.dart';
+import '../models/hospital.dart';
+import '../network/api_exceptions.dart';
+import '../services/trip_service.dart';
+
+/// Manages the active trip state through its full lifecycle.
+class TripProvider extends ChangeNotifier {
+  final TripService _tripService;
+
+  Trip? _activeTrip;
+  List<HospitalRecommendation> _recommendations = [];
+  HandshakeResult? _handshakeResult;
+  bool _isLoading = false;
+  String? _error;
+
+  TripProvider([TripService? tripService])
+      : _tripService = tripService ?? TripService();
+
+  // ── Getters ──
+
+  Trip? get activeTrip => _activeTrip;
+  List<HospitalRecommendation> get recommendations => _recommendations;
+  HandshakeResult? get handshakeResult => _handshakeResult;
+  bool get isLoading => _isLoading;
+  String? get error => _error;
+  bool get hasActiveTrip => _activeTrip != null && _activeTrip!.status.isActive;
+
+  // ── Actions ──
+
+  /// Create a new emergency trip.
+  Future<bool> createTrip({
+    required String incidentType,
+    required int severity,
+    required double pickupLatitude,
+    required double pickupLongitude,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      _activeTrip = await _tripService.createTrip(
+        incidentType: incidentType,
+        severity: severity,
+        pickupLatitude: pickupLatitude,
+        pickupLongitude: pickupLongitude,
+        idempotencyKey: const Uuid().v4(),
+      );
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } on ApiException catch (e) {
+      _error = e.message;
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _error = 'Failed to create trip.';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Fetch hospital recommendations for the active trip.
+  Future<bool> fetchRecommendations() async {
+    if (_activeTrip == null) return false;
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      _recommendations = await _tripService.getRecommendations(_activeTrip!.id);
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } on ApiException catch (e) {
+      _error = e.message;
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _error = 'Failed to load recommendations.';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Lock a hospital via handshake.
+  Future<bool> lockHospital(String hospitalId, {int? etaSeconds}) async {
+    if (_activeTrip == null) return false;
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      _handshakeResult = await _tripService.handshake(
+        tripId: _activeTrip!.id,
+        hospitalId: hospitalId,
+        idempotencyKey: const Uuid().v4(),
+        etaSeconds: etaSeconds,
+      );
+      // Refresh trip state
+      _activeTrip = await _tripService.getTrip(_activeTrip!.id);
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } on ApiException catch (e) {
+      _error = e.message;
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _error = 'Failed to lock hospital.';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Mark the trip as en-route.
+  Future<bool> startEnRoute() async {
+    if (_activeTrip == null) return false;
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      _activeTrip = await _tripService.markEnRoute(_activeTrip!.id);
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } on ApiException catch (e) {
+      _error = e.message;
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _error = 'Failed to start en-route.';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Cancel the active trip.
+  Future<bool> cancelTrip({String? reason}) async {
+    if (_activeTrip == null) return false;
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      _activeTrip = await _tripService.cancelTrip(_activeTrip!.id, reason: reason);
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } on ApiException catch (e) {
+      _error = e.message;
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _error = 'Failed to cancel trip.';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Refresh the active trip from backend.
+  Future<void> refreshTrip() async {
+    if (_activeTrip == null) return;
+    try {
+      _activeTrip = await _tripService.getTrip(_activeTrip!.id);
+      notifyListeners();
+    } catch (_) {}
+  }
+
+  /// Clear trip state (e.g., after completion).
+  void clearTrip() {
+    _activeTrip = null;
+    _recommendations = [];
+    _handshakeResult = null;
+    _error = null;
+    notifyListeners();
+  }
+
+  void clearError() {
+    _error = null;
+    notifyListeners();
+  }
+}

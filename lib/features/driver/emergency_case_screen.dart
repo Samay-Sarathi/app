@@ -3,17 +3,18 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/models/incident_type.dart';
 
 class EmergencyCaseScreen extends StatelessWidget {
   const EmergencyCaseScreen({super.key});
 
   static const _cases = [
-    _CaseType(icon: Icons.favorite, label: 'Heart\nAttack', color: AppColors.emergencyRed),
-    _CaseType(icon: Icons.car_crash, label: 'Road\nAccident', color: AppColors.warmOrange),
-    _CaseType(icon: Icons.local_fire_department, label: 'Burn\nInjury', color: AppColors.warmOrange),
-    _CaseType(icon: Icons.pregnant_woman, label: 'Pregnancy\nEmergency', color: AppColors.calmPurple),
-    _CaseType(icon: Icons.psychology, label: 'Stroke', color: AppColors.emergencyRed),
-    _CaseType(icon: Icons.air, label: 'Breathing\nIssue', color: AppColors.medicalBlue),
+    _CaseType(icon: Icons.favorite, label: 'Heart\nAttack', color: AppColors.emergencyRed, incidentType: IncidentType.cardiac),
+    _CaseType(icon: Icons.car_crash, label: 'Road\nAccident', color: AppColors.warmOrange, incidentType: IncidentType.trauma),
+    _CaseType(icon: Icons.local_fire_department, label: 'Burn\nInjury', color: AppColors.warmOrange, incidentType: IncidentType.burn),
+    _CaseType(icon: Icons.pregnant_woman, label: 'Pregnancy\nEmergency', color: AppColors.calmPurple, incidentType: IncidentType.obstetric),
+    _CaseType(icon: Icons.psychology, label: 'Stroke', color: AppColors.emergencyRed, incidentType: IncidentType.stroke),
+    _CaseType(icon: Icons.air, label: 'Breathing\nIssue', color: AppColors.medicalBlue, incidentType: IncidentType.respiratory),
   ];
 
   @override
@@ -72,7 +73,13 @@ class EmergencyCaseScreen extends StatelessWidget {
                   children: _cases.map((c) {
                     return _CaseCard(
                       caseType: c,
-                      onTap: () => context.go('/driver/severity', extra: c.label.replaceAll('\n', ' ')),
+                      onTap: () => context.go(
+                        '/driver/severity',
+                        extra: {
+                          'label': c.label.replaceAll('\n', ' '),
+                          'incidentType': c.incidentType.toJson(),
+                        },
+                      ),
                     );
                   }).toList(),
                 ),
@@ -116,7 +123,8 @@ class _CaseType {
   final IconData icon;
   final String label;
   final Color color;
-  const _CaseType({required this.icon, required this.label, required this.color});
+  final IncidentType incidentType;
+  const _CaseType({required this.icon, required this.label, required this.color, required this.incidentType});
 }
 
 class _CaseCard extends StatelessWidget {

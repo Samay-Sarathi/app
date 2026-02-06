@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/providers/hospital_provider.dart';
+import '../../core/providers/auth_provider.dart';
 import '../../widgets/buttons.dart';
 
 class HospitalCapacityScreen extends StatefulWidget {
@@ -15,6 +18,43 @@ class HospitalCapacityScreen extends StatefulWidget {
 class _HospitalCapacityScreenState extends State<HospitalCapacityScreen> {
   int _vacantBeds = 12;
   int _totalBeds = 50;
+  int _chaosScore = 4;
+
+  @override
+  void initState() {
+    super.initState();
+    // Load initial data from provider if available
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final hp = context.read<HospitalProvider>();
+      if (hp.heartbeat != null) {
+        setState(() {
+          _vacantBeds = hp.heartbeat!.bedAvailable;
+          _totalBeds = hp.heartbeat!.bedCapacityTotal;
+          _chaosScore = hp.heartbeat!.chaosScore;
+        });
+      }
+      // Also fetch incoming trips in background
+      hp.fetchIncomingTrips();
+    });
+  }
+
+  Future<void> _syncHeartbeat() async {
+    final hp = context.read<HospitalProvider>();
+    final messenger = ScaffoldMessenger.of(context);
+    final success = await hp.sendHeartbeat(
+      bedAvailable: _vacantBeds,
+      bedCapacityTotal: _totalBeds,
+      chaosScore: _chaosScore,
+    );
+    if (!mounted) return;
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(success ? 'Capacity synced successfully' : (hp.error ?? 'Sync failed')),
+        backgroundColor: success ? AppColors.lifelineGreen : AppColors.emergencyRed,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +77,11 @@ class _HospitalCapacityScreenState extends State<HospitalCapacityScreen> {
                   Row(
                     children: [
                       GestureDetector(
-                        onTap: () => context.go('/roles'),
+                        onTap: () async {
+                          final nav = GoRouter.of(context);
+                          await context.read<AuthProvider>().logout();
+                          nav.go('/roles');
+                        },
                         child: const Icon(Icons.logout, size: 20, color: AppColors.mediumGray),
                       ),
                       const SizedBox(width: 12),
@@ -134,7 +178,7 @@ class _HospitalCapacityScreenState extends State<HospitalCapacityScreen> {
               // Crisis parameters
               Text('CRISIS PARAMETERS', style: AppTypography.overline.copyWith(color: AppColors.mediumGray, letterSpacing: 1.5)),
               const SizedBox(height: 12),
-              _CrisisBar(label: 'Chaos', value: 4, max: 10, color: AppColors.emergencyRed),
+              _CrisisBar(label: 'Chaos', value: _chaosScore, max: 10, color: AppColors.emergencyRed),
               const SizedBox(height: 10),
               _CrisisBar(label: 'Doctors', value: 8, max: 10, color: AppColors.lifelineGreen),
               const SizedBox(height: 10),
@@ -158,18 +202,7 @@ class _HospitalCapacityScreenState extends State<HospitalCapacityScreen> {
                   Expanded(
                     child: PrimaryButton(
                       label: 'SYNC & RESET',
-                      onPressed: () {
-                        setState(() {
-                          _vacantBeds = 12;
-                          _totalBeds = 50;
-                        });
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Capacity synced & timer reset'),
-                            duration: Duration(seconds: 2),
-                          ),
-                        );
-                      },
+                      onPressed: _syncHeartbeat,
                     ),
                   ),
                 ],

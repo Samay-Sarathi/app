@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/providers/auth_provider.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -119,7 +121,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ),
               const SizedBox(height: 12),
               GestureDetector(
-                onTap: () => context.go('/roles'),
+                onTap: () async {
+                  final nav = GoRouter.of(context);
+                  await context.read<AuthProvider>().logout();
+                  nav.go('/roles');
+                },
                 child: Row(
                   children: [
                     const Icon(Icons.logout, size: 18, color: AppColors.mediumGray),
@@ -147,7 +153,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           child: Row(
             children: [
               GestureDetector(
-                onTap: () => context.go('/roles'),
+                onTap: () async {
+                  final nav = GoRouter.of(context);
+                  await context.read<AuthProvider>().logout();
+                  nav.go('/roles');
+                },
                 child: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
               ),
               const SizedBox(width: 12),

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/providers/trip_provider.dart';
 import '../../widgets/buttons.dart';
 
 class TriageSyncScreen extends StatelessWidget {
@@ -10,6 +12,11 @@ class TriageSyncScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tripProvider = context.watch<TripProvider>();
+    final trip = tripProvider.activeTrip;
+    final tripId = trip?.id.substring(0, 8).toUpperCase() ?? 'N/A';
+    final severity = trip?.severity ?? 7;
+
     return Scaffold(
       backgroundColor: AppColors.commandDark,
       body: SafeArea(
@@ -49,7 +56,7 @@ class TriageSyncScreen extends StatelessWidget {
                 children: [
                   const Icon(Icons.person, size: 16, color: AppColors.mediumGray),
                   const SizedBox(width: 4),
-                  Text('#PX-8812', style: AppTypography.bodyS.copyWith(color: AppColors.mediumGray)),
+                  Text('#PX-$tripId', style: AppTypography.bodyS.copyWith(color: AppColors.mediumGray)),
                   const SizedBox(width: 16),
                   const Icon(Icons.location_on, size: 16, color: AppColors.mediumGray),
                   const SizedBox(width: 4),
@@ -76,7 +83,7 @@ class TriageSyncScreen extends StatelessWidget {
                           style: AppTypography.overline.copyWith(color: AppColors.white.withValues(alpha: 0.6)),
                         ),
                         Text(
-                          '7',
+                          '$severity',
                           style: AppTypography.heading2.copyWith(color: AppColors.emergencyRed),
                         ),
                       ],
@@ -85,7 +92,7 @@ class TriageSyncScreen extends StatelessWidget {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(4),
                       child: LinearProgressIndicator(
-                        value: 0.7,
+                        value: severity / 10,
                         minHeight: 8,
                         backgroundColor: AppColors.white.withValues(alpha: 0.1),
                         color: AppColors.emergencyRed,
@@ -115,7 +122,10 @@ class TriageSyncScreen extends StatelessWidget {
               PrimaryButton(
                 label: 'AUTHORIZE UPLINK',
                 icon: Icons.upload,
-                onPressed: () => context.go('/driver/dashboard'),
+                onPressed: () {
+                  context.read<TripProvider>().clearTrip();
+                  context.go('/driver/dashboard');
+                },
               ),
             ],
           ),

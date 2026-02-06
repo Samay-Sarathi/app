@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/providers/auth_provider.dart';
 import '../../widgets/buttons.dart';
 
 class SignInScreen extends StatefulWidget {
@@ -14,7 +16,16 @@ class SignInScreen extends StatefulWidget {
 }
 
 class _SignInScreenState extends State<SignInScreen> {
+  final _phoneController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+
+  @override
+  void dispose() {
+    _phoneController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   IconData get _roleIcon {
     switch (widget.role) {
@@ -76,9 +87,39 @@ class _SignInScreenState extends State<SignInScreen> {
     }
   }
 
+  Future<void> _handleLogin() async {
+    final auth = context.read<AuthProvider>();
+    auth.clearError();
+
+    final phone = _phoneController.text.trim();
+    final password = _passwordController.text;
+
+    if (phone.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter phone number and password')),
+      );
+      return;
+    }
+
+    final success = await auth.login(phoneNumber: phone, password: password);
+    if (!mounted) return;
+
+    if (success) {
+      context.go(auth.dashboardRoute);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(auth.error ?? 'Login failed'),
+          backgroundColor: AppColors.emergencyRed,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final onSurface = Theme.of(context).colorScheme.onSurface;
+    final auth = context.watch<AuthProvider>();
 
     return Scaffold(
       body: SafeArea(
@@ -134,14 +175,17 @@ class _SignInScreenState extends State<SignInScreen> {
               ),
               const SizedBox(height: 40),
               TextField(
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
                 decoration: const InputDecoration(
-                  labelText: 'Email',
-                  hintText: 'Enter your email',
-                  prefixIcon: Icon(Icons.email_outlined),
+                  labelText: 'Phone Number',
+                  hintText: '+919876543210',
+                  prefixIcon: Icon(Icons.phone_outlined),
                 ),
               ),
               const SizedBox(height: 16),
               TextField(
+                controller: _passwordController,
                 obscureText: _obscurePassword,
                 decoration: InputDecoration(
                   labelText: 'Password',
@@ -155,17 +199,13 @@ class _SignInScreenState extends State<SignInScreen> {
                     ),
                   ),
                 ),
+                onSubmitted: (_) => _handleLogin(),
               ),
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {},
-                  child: Text(
-                    'Forgot Password?',
-                    style: AppTypography.bodyS.copyWith(color: AppColors.medicalBlue),
-                  ),
-                ),
+              const SizedBox(height: 24),
+              PrimaryButton(
+                label: auth.isLoading ? 'Signing in...' : 'Sign In',
+                isLoading: auth.isLoading,
+                onPressed: auth.isLoading ? null : _handleLogin,
               ),
               const SizedBox(height: 16),
               GhostButton(
@@ -173,15 +213,10 @@ class _SignInScreenState extends State<SignInScreen> {
                 icon: Icons.fingerprint,
                 onPressed: () => context.go(_dashboardRoute),
               ),
-              const SizedBox(height: 16),
-              PrimaryButton(
-                label: 'Sign In',
-                onPressed: () => context.go(_dashboardRoute),
-              ),
               const SizedBox(height: 24),
               Center(
                 child: GestureDetector(
-                  onTap: () {},
+                  onTap: () => context.go('/register', extra: widget.role),
                   child: RichText(
                     text: TextSpan(
                       text: 'New here? ',

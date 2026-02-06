@@ -8,6 +8,8 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/providers/settings_provider.dart';
+import '../../core/providers/auth_provider.dart';
+import '../../core/providers/trip_provider.dart';
 import '../../widgets/status_badge.dart';
 import '../../widgets/info_card.dart';
 import '../../widgets/bottom_nav.dart';
@@ -77,7 +79,14 @@ class _StatusTab extends StatelessWidget {
                   ),
                   const SizedBox(width: 12),
                   GestureDetector(
-                    onTap: () => context.go('/roles'),
+                    onTap: () async {
+                      final nav = GoRouter.of(context);
+                      final auth = context.read<AuthProvider>();
+                      final trip = context.read<TripProvider>();
+                      await auth.logout();
+                      trip.clearTrip();
+                      nav.go('/roles');
+                    },
                     child: const Icon(Icons.logout, size: 20, color: AppColors.mediumGray),
                   ),
                 ],
@@ -85,9 +94,23 @@ class _StatusTab extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          Text(
-            'No Active Emergencies',
-            style: AppTypography.bodyS.copyWith(color: AppColors.mediumGray),
+          Builder(
+            builder: (context) {
+              final trip = context.watch<TripProvider>().activeTrip;
+              final auth = context.watch<AuthProvider>();
+              if (trip != null && trip.status.isActive) {
+                return Text(
+                  'Active: ${trip.incidentType.label} — ${trip.status.name.toUpperCase()}',
+                  style: AppTypography.bodyS.copyWith(color: AppColors.emergencyRed),
+                );
+              }
+              return Text(
+                auth.isAuthenticated
+                    ? 'Welcome, ${auth.fullName}'
+                    : 'No Active Emergencies',
+                style: AppTypography.bodyS.copyWith(color: AppColors.mediumGray),
+              );
+            },
           ),
           const SizedBox(height: 16),
 

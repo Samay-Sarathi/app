@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
+import '../../core/providers/auth_provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -32,9 +34,19 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
-    Future.delayed(const Duration(milliseconds: 2500), () {
-      if (mounted) context.go('/roles');
-    });
+    _tryAutoLogin();
+  }
+
+  Future<void> _tryAutoLogin() async {
+    final auth = context.read<AuthProvider>();
+    await auth.tryRestoreSession();
+    await Future.delayed(const Duration(milliseconds: 2500));
+    if (!mounted) return;
+    if (auth.isAuthenticated) {
+      context.go(auth.dashboardRoute);
+    } else {
+      context.go('/roles');
+    }
   }
 
   @override

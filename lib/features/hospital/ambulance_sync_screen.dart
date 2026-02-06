@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:provider/provider.dart';
 import '../../core/config/app_config.dart';
 import '../../core/map/map_config.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/providers/hospital_provider.dart';
 import '../../core/widgets/map_placeholder.dart';
 import '../../widgets/buttons.dart';
 import '../../widgets/status_badge.dart';
@@ -65,6 +67,13 @@ class _AmbulanceSyncScreenState extends State<AmbulanceSyncScreen> {
     final theme = Theme.of(context);
     final onSurface = theme.colorScheme.onSurface;
     final cardColor = theme.colorScheme.surface;
+    final hp = context.watch<HospitalProvider>();
+    final incomingTrip = hp.incomingTrips.isNotEmpty ? hp.incomingTrips.first : null;
+    final etaMin = incomingTrip?.etaSeconds != null
+        ? (incomingTrip!.etaSeconds! / 60).ceil()
+        : 6;
+    final incidentLabel = incomingTrip?.incidentType.label ?? 'TRAUMA';
+    final severityLevel = incomingTrip?.severity ?? 1;
 
     return Scaffold(
       body: SafeArea(
@@ -84,7 +93,7 @@ class _AmbulanceSyncScreenState extends State<AmbulanceSyncScreen> {
                   const Icon(Icons.map, size: 20, color: AppColors.medicalBlue),
                   const SizedBox(width: 8),
                   Text(
-                    'ETA: 6 MINS',
+                    'ETA: $etaMin MINS',
                     style: AppTypography.bodyS.copyWith(
                       fontWeight: FontWeight.w700,
                       color: AppColors.emergencyRed,
@@ -138,8 +147,8 @@ class _AmbulanceSyncScreenState extends State<AmbulanceSyncScreen> {
                         children: [
                           Text('TRIAGE', style: AppTypography.overline.copyWith(color: AppColors.mediumGray)),
                           const SizedBox(height: 4),
-                          Text('LEVEL 1', style: AppTypography.heading3.copyWith(color: AppColors.emergencyRed)),
-                          Text('TRAUMA', style: AppTypography.caption.copyWith(color: AppColors.emergencyRed)),
+                          Text('LEVEL $severityLevel', style: AppTypography.heading3.copyWith(color: AppColors.emergencyRed)),
+                          Text(incidentLabel, style: AppTypography.caption.copyWith(color: AppColors.emergencyRed)),
                         ],
                       ),
                     ),
@@ -228,7 +237,16 @@ class _AmbulanceSyncScreenState extends State<AmbulanceSyncScreen> {
               PrimaryButton(
                 label: 'ACKNOWLEDGE INTAKE',
                 icon: Icons.check,
-                onPressed: () => context.go('/hospital/capacity'),
+                onPressed: () async {
+                  if (incomingTrip != null) {
+                    // Confirm arrival then complete
+                    await hp.confirmArrival(incomingTrip.id);
+                    if (context.mounted) {
+                      await hp.completeTrip(incomingTrip.id);
+                    }
+                  }
+                  if (context.mounted) context.go('/hospital/capacity');
+                },
               ),
             ],
           ),
