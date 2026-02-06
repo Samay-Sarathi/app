@@ -112,9 +112,6 @@ class _HospitalSelectionScreenState extends State<HospitalSelectionScreen> {
             decoration: BoxDecoration(
               color: cardColor,
               borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-              boxShadow: [
-                BoxShadow(color: Color(0x1A000000), offset: Offset(0, -4), blurRadius: 15),
-              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

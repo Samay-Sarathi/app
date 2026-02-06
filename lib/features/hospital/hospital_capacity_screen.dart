@@ -69,7 +69,6 @@ class _HospitalCapacityScreenState extends State<HospitalCapacityScreen> {
                 decoration: BoxDecoration(
                   color: cardColor,
                   borderRadius: AppSpacing.borderRadiusLg,
-                  boxShadow: AppSpacing.shadowMd,
                 ),
                 child: Column(
                   children: [
@@ -101,7 +100,6 @@ class _HospitalCapacityScreenState extends State<HospitalCapacityScreen> {
                 decoration: BoxDecoration(
                   color: cardColor,
                   borderRadius: AppSpacing.borderRadiusLg,
-                  boxShadow: AppSpacing.shadowSm,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

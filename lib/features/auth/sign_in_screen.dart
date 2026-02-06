@@ -34,13 +34,13 @@ class _SignInScreenState extends State<SignInScreen> {
   Color get _roleColor {
     switch (widget.role) {
       case 'driver':
-        return AppColors.emergencyRed;
+        return AppColors.medicalBlue;
       case 'police':
         return AppColors.calmPurple;
       case 'hospital':
         return AppColors.hospitalTeal;
       case 'admin':
-        return AppColors.medicalBlue;
+        return AppColors.warmOrange;
       default:
         return AppColors.lifelineGreen;
     }

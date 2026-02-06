@@ -186,7 +186,7 @@ class _LevelButton extends StatelessWidget {
           color: isSelected ? color.withValues(alpha: 0.15) : Theme.of(context).colorScheme.surface,
           borderRadius: AppSpacing.borderRadiusMd,
           border: Border.all(
-            color: isSelected ? color : AppColors.lightGray,
+            color: isSelected ? color : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
             width: isSelected ? 2 : 1,
           ),
         ),

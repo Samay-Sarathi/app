@@ -173,7 +173,6 @@ class _AmbulanceSyncScreenState extends State<AmbulanceSyncScreen> {
                 decoration: BoxDecoration(
                   color: cardColor,
                   borderRadius: AppSpacing.borderRadiusLg,
-                  boxShadow: AppSpacing.shadowMd,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

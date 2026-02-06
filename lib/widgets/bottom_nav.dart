@@ -16,18 +16,20 @@ class LifelineBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final navColor = Theme.of(context).colorScheme.surface;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      height: 80,
+      height: 72,
       decoration: BoxDecoration(
         color: navColor,
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x1A000000),
-            offset: Offset(0, -4),
-            blurRadius: 15,
+        border: Border(
+          top: BorderSide(
+            color: isDark
+                ? AppColors.white.withValues(alpha: 0.06)
+                : AppColors.black.withValues(alpha: 0.06),
+            width: 1,
           ),
-        ],
+        ),
       ),
       child: SafeArea(
         top: false,
@@ -41,19 +43,20 @@ class LifelineBottomNav extends StatelessWidget {
               behavior: HitTestBehavior.opaque,
               child: SizedBox(
                 width: 64,
+                height: 48,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
                       item.icon,
-                      size: 28,
+                      size: 24,
                       color: isActive ? AppColors.lifelineGreen : AppColors.mediumGray,
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 3),
                     Text(
                       item.label,
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 10,
                         fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
                         color: isActive ? AppColors.lifelineGreen : AppColors.mediumGray,
                       ),

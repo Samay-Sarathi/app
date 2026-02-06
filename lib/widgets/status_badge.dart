@@ -12,7 +12,9 @@ class StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final config = _getConfig();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final config = _getConfig(isDark);
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
@@ -44,36 +46,36 @@ class StatusBadge extends StatelessWidget {
     );
   }
 
-  _BadgeConfig _getConfig() {
+  _BadgeConfig _getConfig(bool isDark) {
     switch (status) {
       case BadgeStatus.active:
         return _BadgeConfig(
-          AppColors.activeBackground,
-          AppColors.activeForeground,
+          isDark ? AppColors.lifelineGreen.withValues(alpha: 0.15) : AppColors.activeBackground,
+          isDark ? AppColors.lifelineGreen : AppColors.activeForeground,
           'Active',
         );
       case BadgeStatus.synced:
         return _BadgeConfig(
-          AppColors.syncedBackground,
-          AppColors.syncedForeground,
+          isDark ? AppColors.medicalBlue.withValues(alpha: 0.15) : AppColors.syncedBackground,
+          isDark ? AppColors.medicalBlue : AppColors.syncedForeground,
           'Synced',
         );
       case BadgeStatus.warning:
         return _BadgeConfig(
-          AppColors.warningBackground,
-          AppColors.warningForeground,
+          isDark ? AppColors.warmOrange.withValues(alpha: 0.15) : AppColors.warningBackground,
+          isDark ? AppColors.warmOrange : AppColors.warningForeground,
           'Warning',
         );
       case BadgeStatus.offline:
         return _BadgeConfig(
-          AppColors.offlineBackground,
-          AppColors.offlineForeground,
+          isDark ? AppColors.emergencyRed.withValues(alpha: 0.15) : AppColors.offlineBackground,
+          isDark ? AppColors.emergencyRed : AppColors.offlineForeground,
           'Offline',
         );
       case BadgeStatus.pending:
         return _BadgeConfig(
-          AppColors.pendingBackground,
-          AppColors.pendingForeground,
+          isDark ? AppColors.mediumGray.withValues(alpha: 0.15) : AppColors.pendingBackground,
+          isDark ? AppColors.mediumGray : AppColors.pendingForeground,
           'Pending',
         );
     }

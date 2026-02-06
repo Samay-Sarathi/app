@@ -125,7 +125,7 @@ class _EmergencyButtonState extends State<EmergencyButton>
                 foregroundColor: AppColors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: AppSpacing.borderRadiusMd,
-                  side: const BorderSide(color: AppColors.white, width: 2),
+                  side: BorderSide(color: AppColors.white.withValues(alpha: 0.5), width: 2),
                 ),
                 elevation: 4,
               ),
@@ -164,6 +164,8 @@ class GhostButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final foreground = Theme.of(context).colorScheme.onSurface;
+
     return SizedBox(
       width: double.infinity,
       height: 48,
@@ -173,8 +175,8 @@ class GhostButton extends StatelessWidget {
           onPressed!.call();
         },
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.darkGray,
-          side: const BorderSide(color: AppColors.mediumGray),
+          foregroundColor: foreground,
+          side: BorderSide(color: foreground.withValues(alpha: 0.25)),
           shape: RoundedRectangleBorder(borderRadius: AppSpacing.borderRadiusMd),
         ),
         child: Row(

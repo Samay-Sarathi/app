@@ -17,18 +17,24 @@ class RoleSelectionScreen extends StatelessWidget {
           padding: const EdgeInsets.all(AppSpacing.spaceXl),
           child: Column(
             children: [
-              const SizedBox(height: 32),
+              const SizedBox(height: 40),
               Container(
-                width: 80,
-                height: 80,
+                width: 72,
+                height: 72,
                 decoration: BoxDecoration(
                   color: AppColors.lifelineGreen,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(18),
                 ),
-                child: const Icon(Icons.favorite, size: 44, color: AppColors.white),
+                child: const Icon(Icons.favorite, size: 40, color: AppColors.white),
               ),
               const SizedBox(height: 16),
-              Text('LIFELINE', style: AppTypography.heading2.copyWith(letterSpacing: 3, color: onSurface)),
+              Text(
+                'LIFELINE',
+                style: AppTypography.heading2.copyWith(
+                  letterSpacing: 3,
+                  color: onSurface,
+                ),
+              ),
               const SizedBox(height: 4),
               Text(
                 'Emergency Access Portal',
@@ -45,7 +51,7 @@ class RoleSelectionScreen extends StatelessWidget {
                     _RoleCard(
                       icon: Icons.local_shipping,
                       label: 'Ambulance\nDriver',
-                      color: AppColors.emergencyRed,
+                      color: AppColors.medicalBlue,
                       onTap: () => context.go('/sign-in', extra: 'driver'),
                     ),
                     _RoleCard(
@@ -63,7 +69,7 @@ class RoleSelectionScreen extends StatelessWidget {
                     _RoleCard(
                       icon: Icons.admin_panel_settings,
                       label: 'Admin',
-                      color: AppColors.medicalBlue,
+                      color: AppColors.warmOrange,
                       onTap: () => context.go('/sign-in', extra: 'admin'),
                     ),
                   ],
@@ -72,7 +78,7 @@ class RoleSelectionScreen extends StatelessWidget {
               const SizedBox(height: 16),
               Row(
                 children: [
-                  const Icon(Icons.language, size: 20, color: AppColors.mediumGray),
+                  const Icon(Icons.language, size: 18, color: AppColors.mediumGray),
                   const SizedBox(width: 8),
                   Text('English', style: AppTypography.bodyS.copyWith(color: AppColors.mediumGray)),
                   const Icon(Icons.arrow_drop_down, color: AppColors.mediumGray),
@@ -81,7 +87,7 @@ class RoleSelectionScreen extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 'Emergency: 108',
-                style: AppTypography.caption.copyWith(color: AppColors.emergencyRed),
+                style: AppTypography.caption.copyWith(color: AppColors.mediumGray),
               ),
             ],
           ),
@@ -115,25 +121,27 @@ class _RoleCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: cardColor,
           borderRadius: AppSpacing.borderRadiusLg,
-          boxShadow: AppSpacing.shadowMd,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 56,
-              height: 56,
+              width: 52,
+              height: 52,
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(14),
               ),
-              child: Icon(icon, size: 32, color: color),
+              child: Icon(icon, size: 28, color: color),
             ),
             const SizedBox(height: 12),
             Text(
               label,
               textAlign: TextAlign.center,
-              style: AppTypography.bodyS.copyWith(fontWeight: FontWeight.w600, color: onSurface),
+              style: AppTypography.bodyS.copyWith(
+                fontWeight: FontWeight.w600,
+                color: onSurface,
+              ),
             ),
           ],
         ),

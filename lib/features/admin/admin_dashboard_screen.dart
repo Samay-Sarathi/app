@@ -196,7 +196,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             decoration: BoxDecoration(
               color: cardColor,
               borderRadius: AppSpacing.borderRadiusLg,
-              boxShadow: AppSpacing.shadowSm,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -234,7 +233,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             decoration: BoxDecoration(
               color: cardColor,
               borderRadius: AppSpacing.borderRadiusLg,
-              boxShadow: AppSpacing.shadowSm,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -283,7 +281,6 @@ class _StatCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: AppSpacing.borderRadiusMd,
-        boxShadow: AppSpacing.shadowSm,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

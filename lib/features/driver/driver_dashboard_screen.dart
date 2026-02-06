@@ -158,7 +158,6 @@ class _StatusTab extends StatelessWidget {
             decoration: BoxDecoration(
               color: cardColor,
               borderRadius: AppSpacing.borderRadiusLg,
-              boxShadow: AppSpacing.shadowSm,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -395,7 +394,6 @@ class _SettingsTab extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: cardColor,
                     borderRadius: AppSpacing.borderRadiusLg,
-                    boxShadow: AppSpacing.shadowSm,
                   ),
                   child: Row(
                     children: [
@@ -791,7 +789,6 @@ class _AlertItem extends StatelessWidget {
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: AppSpacing.borderRadiusMd,
-        boxShadow: AppSpacing.shadowSm,
         border: Border(left: BorderSide(color: _color, width: 3)),
       ),
       child: Row(

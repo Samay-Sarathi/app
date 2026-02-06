@@ -84,7 +84,6 @@ class EmergencyCaseScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: cardColor,
                   borderRadius: AppSpacing.borderRadiusLg,
-                  boxShadow: AppSpacing.shadowSm,
                 ),
                 child: Row(
                   children: [
@@ -136,7 +135,6 @@ class _CaseCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: cardColor,
           borderRadius: AppSpacing.borderRadiusLg,
-          boxShadow: AppSpacing.shadowMd,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -171,6 +169,7 @@ class _RecentChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cardColor = Theme.of(context).colorScheme.surface;
+    final onSurface = Theme.of(context).colorScheme.onSurface;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -182,9 +181,9 @@ class _RecentChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: AppColors.emergencyRed),
+          Icon(icon, size: 14, color: AppColors.mediumGray),
           const SizedBox(width: 4),
-          Text(label, style: AppTypography.caption),
+          Text(label, style: AppTypography.caption.copyWith(color: onSurface)),
         ],
       ),
     );
