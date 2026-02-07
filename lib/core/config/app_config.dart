@@ -10,7 +10,7 @@ class AppConfig {
 
   /// Master switch for Google Maps.
   /// Set to `true` once a real API key is in place.
-  static const bool enableMaps = false;
+  static const bool enableMaps = true;
 
   /// Request timeout in seconds.
   static const int connectTimeout = 10;

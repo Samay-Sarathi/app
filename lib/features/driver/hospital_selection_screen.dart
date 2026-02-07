@@ -224,7 +224,7 @@ class _HospitalSelectionScreenState extends State<HospitalSelectionScreen> {
                           )
                         : MapConfig.overviewCamera,
                     markers: markers,
-                    liteModeEnabled: true,
+                    liteModeEnabled: false,
                     myLocationEnabled: false,
                     zoomControlsEnabled: false,
                     mapToolbarEnabled: false,

@@ -532,7 +532,7 @@ class _MapTabState extends State<_MapTab> {
                           ),
                       },
                       style: MapConfig.darkMapStyle,
-                      liteModeEnabled: true,
+                      liteModeEnabled: false,
                       myLocationEnabled: false,
                       zoomControlsEnabled: false,
                       mapToolbarEnabled: false,

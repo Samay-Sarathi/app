@@ -280,7 +280,7 @@ class _MapTabState extends State<_MapTab> {
                       initialCameraPosition: MapConfig.overviewCamera,
                       markers: _markers,
                       style: MapConfig.darkMapStyle,
-                      liteModeEnabled: true,
+                      liteModeEnabled: false,
                       myLocationEnabled: false,
                       zoomControlsEnabled: false,
                       mapToolbarEnabled: false,

@@ -399,7 +399,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
                         markers: _markers,
                         polylines: _polylines,
                         style: MapConfig.darkMapStyle,
-                        liteModeEnabled: true,
+                        liteModeEnabled: false,
                         myLocationEnabled: false,
                         zoomControlsEnabled: false,
                         mapToolbarEnabled: false,

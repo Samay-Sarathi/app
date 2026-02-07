@@ -172,7 +172,7 @@ class _AmbulanceSyncScreenState extends State<AmbulanceSyncScreen> {
                           initialCameraPosition: MapConfig.syncCamera,
                           markers: _markers,
                           polylines: _polylines,
-                          liteModeEnabled: true,
+                          liteModeEnabled: false,
                           myLocationEnabled: false,
                           zoomControlsEnabled: false,
                           mapToolbarEnabled: false,
