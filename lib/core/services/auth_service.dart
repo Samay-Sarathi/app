@@ -29,6 +29,7 @@ class AuthService {
     required String password,
     required String role,
     String? hospitalId,
+    String? email,
   }) async {
     final data = <String, dynamic>{
       'phoneNumber': phoneNumber,
@@ -37,6 +38,7 @@ class AuthService {
       'role': role,
     };
     if (hospitalId != null) data['hospitalId'] = hospitalId;
+    if (email != null && email.isNotEmpty) data['email'] = email;
 
     final response = await _client.post('/auth/register', data: data);
     return AuthUser.fromJson(response.data as Map<String, dynamic>);

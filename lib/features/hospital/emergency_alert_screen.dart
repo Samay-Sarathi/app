@@ -59,6 +59,220 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen>
     super.dispose();
   }
 
+  void _showDeclineReasonDialog(BuildContext parentContext, Trip? trip, HospitalProvider hp) {
+    if (trip == null) return;
+
+    String? selectedReason;
+    final reasons = [
+      'No available beds',
+      'No specialist on duty',
+      'Equipment not available',
+      'ER at full capacity',
+      'Mass casualty event in progress',
+      'Other',
+    ];
+    final customController = TextEditingController();
+
+    showDialog(
+      context: parentContext,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppColors.emergencyRed, Color(0xFFB71C1C)],
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    const Icon(Icons.report_problem, size: 32, color: AppColors.white),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Reason for Declining',
+                      style: AppTypography.heading3.copyWith(color: AppColors.white),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'This helps route the patient faster',
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.white.withValues(alpha: 0.85),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'SELECT A REASON',
+                      style: AppTypography.overline.copyWith(
+                        color: AppColors.mediumGray,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ...reasons.map((reason) {
+                      final isSelected = selectedReason == reason;
+                      return GestureDetector(
+                        onTap: () => setDialogState(() => selectedReason = reason),
+                        child: Container(
+                          width: double.infinity,
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? AppColors.emergencyRed.withValues(alpha: 0.08)
+                                : Theme.of(ctx).scaffoldBackgroundColor,
+                            borderRadius: AppSpacing.borderRadiusSm,
+                            border: Border.all(
+                              color: isSelected
+                                  ? AppColors.emergencyRed.withValues(alpha: 0.4)
+                                  : AppColors.lightGray,
+                              width: isSelected ? 2 : 1,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+                                size: 18,
+                                color: isSelected ? AppColors.emergencyRed : AppColors.mediumGray,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  reason,
+                                  style: AppTypography.bodyS.copyWith(
+                                    color: isSelected ? AppColors.emergencyRed : Theme.of(ctx).colorScheme.onSurface,
+                                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
+                    if (selectedReason == 'Other') ...[
+                      const SizedBox(height: 4),
+                      TextField(
+                        controller: customController,
+                        decoration: InputDecoration(
+                          hintText: 'Please specify the reason...',
+                          hintStyle: AppTypography.caption.copyWith(color: AppColors.mediumGray),
+                          filled: true,
+                          fillColor: Theme.of(ctx).scaffoldBackgroundColor,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(color: AppColors.lightGray),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(color: AppColors.emergencyRed),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        ),
+                        maxLines: 2,
+                        style: AppTypography.bodyS,
+                      ),
+                    ],
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => Navigator.of(ctx).pop(),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              decoration: BoxDecoration(
+                                color: AppColors.mediumGray.withValues(alpha: 0.1),
+                                borderRadius: AppSpacing.borderRadiusMd,
+                                border: Border.all(color: AppColors.mediumGray.withValues(alpha: 0.3)),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  'Cancel',
+                                  style: AppTypography.bodyS.copyWith(
+                                    color: AppColors.mediumGray,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 2,
+                          child: GestureDetector(
+                            onTap: selectedReason == null
+                                ? null
+                                : () async {
+                                    final reason = selectedReason == 'Other'
+                                        ? (customController.text.trim().isNotEmpty
+                                            ? customController.text.trim()
+                                            : 'Other')
+                                        : selectedReason!;
+                                    
+                                    // Close dialog
+                                    if (!ctx.mounted) return;
+                                    Navigator.of(ctx).pop();
+                                    
+                                    // Perform async operations
+                                    await hp.rejectTrip(trip.id, reason);
+                                    
+                                    // Navigate back to capacity screen using parent context
+                                    if (!parentContext.mounted) return;
+                                    GoRouter.of(parentContext).go('/hospital/capacity');
+                                  },
+                            child: AnimatedOpacity(
+                              opacity: selectedReason == null ? 0.4 : 1.0,
+                              duration: const Duration(milliseconds: 200),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [AppColors.emergencyRed, Color(0xFFB71C1C)],
+                                  ),
+                                  borderRadius: AppSpacing.borderRadiusMd,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    'Confirm Decline',
+                                    style: AppTypography.bodyS.copyWith(
+                                      color: AppColors.white,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final hp = context.watch<HospitalProvider>();
@@ -184,12 +398,7 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen>
                     child: SizedBox(
                       height: 56,
                       child: OutlinedButton(
-                        onPressed: () async {
-                          if (incomingTrip != null) {
-                            await hp.rejectTrip(incomingTrip.id, 'Capacity full');
-                          }
-                          if (context.mounted) context.go('/hospital/capacity');
-                        },
+                        onPressed: () => _showDeclineReasonDialog(context, incomingTrip, hp),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.white,
                           side: const BorderSide(color: AppColors.white, width: 1.5),

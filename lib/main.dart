@@ -6,6 +6,7 @@ import 'core/providers/settings_provider.dart';
 import 'core/providers/auth_provider.dart';
 import 'core/providers/trip_provider.dart';
 import 'core/providers/hospital_provider.dart';
+import 'core/services/websocket_service.dart';
 import 'routes/app_router.dart';
 
 void main() {
@@ -25,19 +26,48 @@ class LifeLineApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => TripProvider()),
         ChangeNotifierProvider(create: (_) => HospitalProvider()),
+        ChangeNotifierProvider(create: (_) => WebSocketService()),
       ],
-      child: Consumer<SettingsProvider>(
-        builder: (context, settings, _) {
-          return MaterialApp.router(
-            title: 'LifeLine',
-            debugShowCheckedModeBanner: false,
-            theme: AppTheme.lightTheme,
-            darkTheme: AppTheme.darkTheme,
-            themeMode: settings.themeMode,
-            routerConfig: AppRouter.router,
-          );
-        },
+      child: _WebSocketBridge(
+        child: Consumer<SettingsProvider>(
+          builder: (context, settings, _) {
+            return MaterialApp.router(
+              title: 'LifeLine',
+              debugShowCheckedModeBanner: false,
+              theme: AppTheme.lightTheme,
+              darkTheme: AppTheme.darkTheme,
+              themeMode: settings.themeMode,
+              routerConfig: AppRouter.router,
+            );
+          },
+        ),
       ),
     );
   }
+}
+
+/// Bridges AuthProvider ↔ WebSocketService so that connect/disconnect
+/// happens automatically on login / logout / session restore.
+class _WebSocketBridge extends StatefulWidget {
+  final Widget child;
+  const _WebSocketBridge({required this.child});
+
+  @override
+  State<_WebSocketBridge> createState() => _WebSocketBridgeState();
+}
+
+class _WebSocketBridgeState extends State<_WebSocketBridge> {
+  @override
+  void initState() {
+    super.initState();
+    // Schedule after first frame so providers are available
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final auth = context.read<AuthProvider>();
+      final ws = context.read<WebSocketService>();
+      auth.attachWebSocket(ws);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }

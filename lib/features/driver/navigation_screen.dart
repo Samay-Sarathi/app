@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
@@ -9,6 +11,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/providers/trip_provider.dart';
+import '../../core/services/websocket_service.dart';
 import '../../widgets/info_card.dart';
 import '../../core/widgets/map_placeholder.dart';
 
@@ -23,6 +26,11 @@ class _NavigationScreenState extends State<NavigationScreen> {
   GoogleMapController? _mapController;
   late final Set<Marker> _markers;
   late final Set<Polyline> _polylines;
+
+  // Location streaming
+  StreamSubscription<Position>? _locationSub;
+  String? _subscribedTripTopic;
+  double _currentSpeed = 0;
 
   @override
   void initState() {
@@ -54,18 +62,139 @@ class _NavigationScreenState extends State<NavigationScreen> {
       _markers = {};
       _polylines = {};
     }
+    _startLocationStreaming();
+    _subscribeToTripStatus();
+  }
+
+  /// Start streaming GPS location via WebSocket.
+  Future<void> _startLocationStreaming() async {
+    final trip = context.read<TripProvider>().activeTrip;
+    if (trip == null) return;
+
+    // Check & request location permissions
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      debugPrint('Location permission denied');
+      return;
+    }
+
+    final ws = context.read<WebSocketService>();
+
+    _locationSub = Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 10, // meters — only send when moved
+      ),
+    ).listen((position) {
+      if (!mounted) return;
+      setState(() => _currentSpeed = position.speed * 3.6); // m/s → km/h
+
+      // Send via WebSocket STOMP
+      ws.send('/app/trip/${trip.id}/location', {
+        'latitude': position.latitude,
+        'longitude': position.longitude,
+        'heading': position.heading,
+        'speed': position.speed,
+        'accuracy': position.accuracy,
+      });
+    });
+  }
+
+  /// Subscribe to trip status changes via WebSocket.
+  void _subscribeToTripStatus() {
+    final trip = context.read<TripProvider>().activeTrip;
+    if (trip == null) return;
+
+    final ws = context.read<WebSocketService>();
+    final topic = '/topic/trip/${trip.id}';
+    _subscribedTripTopic = topic;
+
+    ws.subscribe(topic, (data) {
+      if (!mounted) return;
+      final status = data['status'] as String?;
+      if (status != null) {
+        debugPrint('Trip status update via WS: $status');
+        // Refresh trip state from provider
+        context.read<TripProvider>().refreshTrip();
+      }
+    });
   }
 
   @override
   void dispose() {
+    _locationSub?.cancel();
+    if (_subscribedTripTopic != null) {
+      try {
+        context.read<WebSocketService>().unsubscribe(_subscribedTripTopic!);
+      } catch (_) {}
+    }
     _mapController?.dispose();
     super.dispose();
   }
 
-  void _showQrCode(BuildContext context, dynamic trip) {
-    final tripId = trip?.id ?? 'N/A';
-    final qrData = 'lifeline://trip/$tripId';
+  Future<void> _showQrCode(BuildContext context, dynamic trip) async {
+    if (trip?.id == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No active trip found'),
+          backgroundColor: AppColors.emergencyRed,
+        ),
+      );
+      return;
+    }
 
+    final tripId = trip.id;
+    final tripProvider = context.read<TripProvider>();
+
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const Center(child: CircularProgressIndicator()),
+    );
+
+    // Fetch QR token from backend
+    final qrTokenData = await tripProvider.getQrToken(tripId);
+    
+    if (!context.mounted) return;
+    Navigator.of(context).pop(); // Close loading
+
+    if (qrTokenData == null) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(tripProvider.error ?? 'Failed to get QR token'),
+          backgroundColor: AppColors.emergencyRed,
+        ),
+      );
+      return;
+    }
+
+    final paramedicToken = qrTokenData['paramedicToken'] as String;
+    final expiresAt = qrTokenData['expiresAt'] as String?;
+    
+    // Format expiry time if available
+    String? expiryDisplay;
+    if (expiresAt != null) {
+      try {
+        final expiry = DateTime.parse(expiresAt);
+        final now = DateTime.now();
+        final diff = expiry.difference(now);
+        if (diff.inMinutes > 0) {
+          expiryDisplay = '${diff.inMinutes} min';
+        } else {
+          expiryDisplay = 'Expired';
+        }
+      } catch (_) {
+        expiryDisplay = null;
+      }
+    }
+
+    if (!context.mounted) return;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -99,6 +228,27 @@ class _NavigationScreenState extends State<NavigationScreen> {
               style: AppTypography.bodyS.copyWith(color: AppColors.mediumGray),
               textAlign: TextAlign.center,
             ),
+            if (expiryDisplay != null) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: expiryDisplay == 'Expired' 
+                      ? AppColors.emergencyRed.withValues(alpha: 0.1)
+                      : AppColors.warmOrange.withValues(alpha: 0.1),
+                  borderRadius: AppSpacing.borderRadiusFull,
+                ),
+                child: Text(
+                  'Expires in: $expiryDisplay',
+                  style: AppTypography.caption.copyWith(
+                    color: expiryDisplay == 'Expired' 
+                        ? AppColors.emergencyRed
+                        : AppColors.warmOrange,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 24),
             // QR Code
             Container(
@@ -108,7 +258,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
                 borderRadius: AppSpacing.borderRadiusLg,
               ),
               child: QrImageView(
-                data: qrData,
+                data: paramedicToken,
                 version: QrVersions.auto,
                 size: 200,
                 backgroundColor: AppColors.white,
@@ -272,7 +422,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: DarkInfoCard(value: '—', title: 'Speed (kph)', accentColor: AppColors.medicalBlue),
+                  child: DarkInfoCard(value: _currentSpeed > 0 ? '${_currentSpeed.round()}' : '—', title: 'Speed (kph)', accentColor: AppColors.medicalBlue),
                 ),
               ],
             ),

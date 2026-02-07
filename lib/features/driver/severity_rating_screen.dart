@@ -88,15 +88,20 @@ class _SeverityRatingScreenState extends State<SeverityRatingScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              GestureDetector(
-                onTap: () => context.go('/driver/emergency-case'),
-                child: Row(
-                  children: [
-                    Icon(Icons.arrow_back, color: onSurface),
-                    const SizedBox(width: 12),
-                    Text('Back', style: AppTypography.body.copyWith(color: onSurface)),
-                  ],
-                ),
+              // Top bar with back button
+              Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => context.go('/driver/emergency-case'),
+                    child: Row(
+                      children: [
+                        Icon(Icons.arrow_back, color: onSurface),
+                        const SizedBox(width: 12),
+                        Text('Back', style: AppTypography.body.copyWith(color: onSurface)),
+                      ],
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 32),
               Center(
@@ -196,7 +201,7 @@ class _SeverityRatingScreenState extends State<SeverityRatingScreen> {
               const SizedBox(height: 12),
               _LevelButton(
                 label: 'STABLE',
-                color: AppColors.softYellow,
+                color: AppColors.lifelineGreen,
                 isSelected: _selectedLevel == 2,
                 onTap: () => setState(() { _selectedLevel = 2; _severity = 2; }),
               ),

@@ -57,10 +57,6 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
 class _StatusTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cardColor = theme.colorScheme.surface;
-    final onSurface = theme.colorScheme.onSurface;
-
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.spaceMd),
       child: Column(
@@ -172,32 +168,6 @@ class _StatusTab extends StatelessWidget {
                 ),
               ),
             ],
-          ),
-          const SizedBox(height: 16),
-
-          // Routine log
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.spaceMd),
-            decoration: BoxDecoration(
-              color: cardColor,
-              borderRadius: AppSpacing.borderRadiusLg,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.list_alt, size: 18, color: AppColors.mediumGray),
-                    const SizedBox(width: 8),
-                    Text('Routine Log', style: AppTypography.bodyS.copyWith(fontWeight: FontWeight.w600, color: onSurface)),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                _LogItem(label: 'Signal Sync', time: '04:12'),
-                const Divider(height: 16),
-                _LogItem(label: 'Patrol Logged', time: '03:45'),
-              ],
-            ),
           ),
           const SizedBox(height: 16),
 
@@ -630,23 +600,6 @@ class _AlertsTab extends StatelessWidget {
 }
 
 // ── Shared private widgets ──
-
-class _LogItem extends StatelessWidget {
-  final String label;
-  final String time;
-  const _LogItem({required this.label, required this.time});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label, style: AppTypography.bodyS),
-        Text(time, style: AppTypography.caption.copyWith(color: AppColors.mediumGray)),
-      ],
-    );
-  }
-}
 
 class _GridPainter extends CustomPainter {
   @override

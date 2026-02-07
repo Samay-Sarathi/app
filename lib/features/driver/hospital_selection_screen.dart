@@ -199,11 +199,13 @@ class _HospitalSelectionScreenState extends State<HospitalSelectionScreen> {
                   const SizedBox(width: 12),
                   const Icon(Icons.bar_chart, size: 20, color: AppColors.medicalBlue),
                   const SizedBox(width: 8),
-                  Text(
-                    hasRecs
-                        ? '$totalBeds Available ER Beds'
-                        : 'Loading hospitals...',
-                    style: AppTypography.bodyS.copyWith(fontWeight: FontWeight.w600, color: onSurface),
+                  Expanded(
+                    child: Text(
+                      hasRecs
+                          ? '$totalBeds Available ER Beds'
+                          : 'Loading hospitals...',
+                      style: AppTypography.bodyS.copyWith(fontWeight: FontWeight.w600, color: onSurface),
+                    ),
                   ),
                 ],
               ),

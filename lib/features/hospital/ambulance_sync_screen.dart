@@ -8,6 +8,9 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/providers/hospital_provider.dart';
+import '../../core/services/websocket_service.dart';
+import '../../core/services/triage_service.dart';
+import '../../core/models/triage_data.dart';
 import '../../core/widgets/map_placeholder.dart';
 import '../../widgets/buttons.dart';
 import '../../widgets/status_badge.dart';
@@ -23,6 +26,14 @@ class _AmbulanceSyncScreenState extends State<AmbulanceSyncScreen> {
   GoogleMapController? _mapController;
   late final Set<Marker> _markers;
   late final Set<Polyline> _polylines;
+
+  // Live vitals from WebSocket
+  final TriageService _triageService = TriageService();
+  TriageData? _latestVitals;
+  String? _vitalsTopic;
+  String? _locationTopic;
+  double? _ambulanceLat;
+  double? _ambulanceLng;
 
   @override
   void initState() {
@@ -54,10 +65,52 @@ class _AmbulanceSyncScreenState extends State<AmbulanceSyncScreen> {
       _markers = {};
       _polylines = {};
     }
+    _initLiveData();
+  }
+
+  Future<void> _initLiveData() async {
+    final hp = context.read<HospitalProvider>();
+    final incomingTrip = hp.incomingTrips.isNotEmpty ? hp.incomingTrips.first : null;
+    if (incomingTrip == null) return;
+
+    final tripId = incomingTrip.id;
+
+    // Fetch latest vitals via REST
+    try {
+      _latestVitals = await _triageService.getLatestVitals(tripId);
+      if (mounted) setState(() {});
+    } catch (_) {}
+
+    // Subscribe to live vitals via WebSocket
+    final ws = context.read<WebSocketService>();
+    _vitalsTopic = '/topic/trip/$tripId/vitals';
+    ws.subscribe(_vitalsTopic!, (data) {
+      if (!mounted) return;
+      setState(() {
+        _latestVitals = TriageData.fromJson(data);
+      });
+    });
+
+    // Subscribe to live location via WebSocket
+    _locationTopic = '/topic/trip/$tripId/location';
+    ws.subscribe(_locationTopic!, (data) {
+      if (!mounted) return;
+      setState(() {
+        _ambulanceLat = (data['latitude'] as num?)?.toDouble();
+        _ambulanceLng = (data['longitude'] as num?)?.toDouble();
+      });
+    });
   }
 
   @override
   void dispose() {
+    final ws = context.read<WebSocketService>();
+    if (_vitalsTopic != null) {
+      try { ws.unsubscribe(_vitalsTopic!); } catch (_) {}
+    }
+    if (_locationTopic != null) {
+      try { ws.unsubscribe(_locationTopic!); } catch (_) {}
+    }
     _mapController?.dispose();
     super.dispose();
   }
@@ -202,11 +255,43 @@ class _AmbulanceSyncScreenState extends State<AmbulanceSyncScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        _VitalItem(label: 'HR', value: '112', color: AppColors.emergencyRed),
-                        _VitalItem(label: 'BP', value: '90/60', color: AppColors.warmOrange),
-                        _VitalItem(label: 'SpO2', value: '94%', color: AppColors.medicalBlue),
+                        _VitalItem(label: 'HR', value: _latestVitals?.heartRate?.toString() ?? '—', color: AppColors.emergencyRed),
+                        _VitalItem(label: 'BP', value: _latestVitals?.bloodPressure ?? '—', color: AppColors.warmOrange),
+                        _VitalItem(label: 'SpO2', value: _latestVitals?.spo2 != null ? '${_latestVitals!.spo2}%' : '—', color: AppColors.medicalBlue),
                       ],
                     ),
+                    if (_latestVitals?.gcsScore != null || _latestVitals?.temperature != null) ...[
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _VitalItem(label: 'GCS', value: _latestVitals?.gcsScore?.toString() ?? '—', color: AppColors.calmPurple),
+                          _VitalItem(label: 'Temp', value: _latestVitals?.temperature?.toStringAsFixed(1) ?? '—', color: AppColors.warmOrange),
+                          _VitalItem(label: 'RR', value: _latestVitals?.respiratoryRate?.toString() ?? '—', color: AppColors.lifelineGreen),
+                        ],
+                      ),
+                    ],
+                    if (_ambulanceLat != null && _ambulanceLng != null) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.medicalBlue.withValues(alpha: 0.08),
+                          borderRadius: AppSpacing.borderRadiusSm,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.my_location, size: 14, color: AppColors.medicalBlue),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Live: ${_ambulanceLat!.toStringAsFixed(4)}, ${_ambulanceLng!.toStringAsFixed(4)}',
+                              style: AppTypography.caption.copyWith(color: AppColors.medicalBlue, fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

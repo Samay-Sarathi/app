@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
@@ -8,6 +10,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/providers/trip_provider.dart';
+import '../../core/services/websocket_service.dart';
 import '../../core/widgets/map_placeholder.dart';
 
 class GreenCorridorScreen extends StatefulWidget {
@@ -24,6 +27,12 @@ class _GreenCorridorScreenState extends State<GreenCorridorScreen>
   GoogleMapController? _mapController;
   late final Set<Marker> _markers;
   late final Set<Polyline> _polylines;
+
+  // Location streaming
+  StreamSubscription<Position>? _locationSub;
+  String? _subscribedTripTopic;
+  double _currentSpeed = 0;
+  double _distanceKm = 1.8; // default
 
   @override
   void initState() {
@@ -63,10 +72,60 @@ class _GreenCorridorScreenState extends State<GreenCorridorScreen>
       _markers = {};
       _polylines = {};
     }
+    _startLocationStreaming();
+    _subscribeToTripStatus();
+  }
+
+  Future<void> _startLocationStreaming() async {
+    final trip = context.read<TripProvider>().activeTrip;
+    if (trip == null) return;
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) return;
+
+    final ws = context.read<WebSocketService>();
+    _locationSub = Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 10,
+      ),
+    ).listen((position) {
+      if (!mounted) return;
+      setState(() => _currentSpeed = position.speed * 3.6);
+      ws.send('/app/trip/${trip.id}/location', {
+        'latitude': position.latitude,
+        'longitude': position.longitude,
+        'heading': position.heading,
+        'speed': position.speed,
+        'accuracy': position.accuracy,
+      });
+    });
+  }
+
+  void _subscribeToTripStatus() {
+    final trip = context.read<TripProvider>().activeTrip;
+    if (trip == null) return;
+    final ws = context.read<WebSocketService>();
+    final topic = '/topic/trip/${trip.id}';
+    _subscribedTripTopic = topic;
+    ws.subscribe(topic, (data) {
+      if (!mounted) return;
+      context.read<TripProvider>().refreshTrip();
+    });
   }
 
   @override
   void dispose() {
+    _locationSub?.cancel();
+    if (_subscribedTripTopic != null) {
+      try {
+        context.read<WebSocketService>().unsubscribe(_subscribedTripTopic!);
+      } catch (_) {}
+    }
     _pulseController.dispose();
     _mapController?.dispose();
     super.dispose();
@@ -166,6 +225,22 @@ class _GreenCorridorScreenState extends State<GreenCorridorScreen>
                   ),
                   Expanded(
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                          'SPEED',
+                          style: AppTypography.overline.copyWith(color: AppColors.white.withValues(alpha: 0.5)),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _currentSpeed > 0 ? '${_currentSpeed.round()}' : '—',
+                          style: AppTypography.heading1.copyWith(color: AppColors.medicalBlue),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
@@ -174,7 +249,7 @@ class _GreenCorridorScreenState extends State<GreenCorridorScreen>
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '1.8 KM',
+                        '${_distanceKm.toStringAsFixed(1)} KM',
                           style: AppTypography.heading1.copyWith(color: AppColors.white),
                         ),
                       ],

@@ -36,6 +36,15 @@ class TripService {
     return Trip.fromJson(response.data as Map<String, dynamic>);
   }
 
+  /// `GET /trips/active` — Get driver's current active trip.
+  Future<Trip?> getActiveTrip() async {
+    final response = await _client.get('/trips/active');
+    if (response.statusCode == 204) {
+      return null; // No active trip
+    }
+    return Trip.fromJson(response.data as Map<String, dynamic>);
+  }
+
   /// `GET /trips/{id}/recommendations` — Get scored hospital list.
   Future<List<HospitalRecommendation>> getRecommendations(String tripId) async {
     final response = await _client.get('/trips/$tripId/recommendations');

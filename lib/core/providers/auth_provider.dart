@@ -6,12 +6,14 @@ import '../models/user_role.dart';
 import '../network/api_client.dart';
 import '../network/api_exceptions.dart';
 import '../services/auth_service.dart';
+import '../services/websocket_service.dart';
 
 /// Manages authentication state, token persistence, and role-based access.
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService;
   final FlutterSecureStorage _storage;
   final ApiClient _apiClient;
+  WebSocketService? _webSocketService;
 
   AuthUser? _user;
   bool _isLoading = false;
@@ -55,6 +57,15 @@ class AuthProvider extends ChangeNotifier {
 
   // ── Actions ──
 
+  /// Attach WebSocket service for auto-connect/disconnect on auth changes.
+  void attachWebSocket(WebSocketService ws) {
+    _webSocketService = ws;
+    // If already authenticated (e.g. restored session), connect now
+    if (_user != null) {
+      ws.connect(_user!.token);
+    }
+  }
+
   /// Try to restore session from secure storage on app start.
   Future<void> tryRestoreSession() async {
     try {
@@ -62,6 +73,7 @@ class AuthProvider extends ChangeNotifier {
       if (json != null) {
         _user = AuthUser.fromJson(jsonDecode(json) as Map<String, dynamic>);
         _apiClient.setToken(_user!.token);
+        _webSocketService?.connect(_user!.token);
       }
     } catch (_) {
       // Corrupted storage — clear it
@@ -86,6 +98,7 @@ class AuthProvider extends ChangeNotifier {
       );
       _apiClient.setToken(_user!.token);
       await _storage.write(key: 'auth_user', value: jsonEncode(_user!.toJson()));
+      _webSocketService?.connect(_user!.token);
       _isLoading = false;
       notifyListeners();
       return true;
@@ -119,6 +132,7 @@ class AuthProvider extends ChangeNotifier {
     required String password,
     required UserRole role,
     String? hospitalId,
+    String? email,
   }) async {
     _isLoading = true;
     _error = null;
@@ -131,9 +145,11 @@ class AuthProvider extends ChangeNotifier {
         password: password,
         role: role.toJson(),
         hospitalId: hospitalId,
+        email: email,
       );
       _apiClient.setToken(_user!.token);
       await _storage.write(key: 'auth_user', value: jsonEncode(_user!.toJson()));
+      _webSocketService?.connect(_user!.token);
       _isLoading = false;
       notifyListeners();
       return true;
@@ -160,6 +176,7 @@ class AuthProvider extends ChangeNotifier {
     _user = null;
     _error = null;
     _apiClient.clearToken();
+    _webSocketService?.disconnect();
     await _storage.delete(key: 'auth_user');
     notifyListeners();
   }

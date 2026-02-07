@@ -30,6 +30,33 @@ class TripProvider extends ChangeNotifier {
 
   // ── Actions ──
 
+  /// Fetch driver's current active trip (for resuming after 409 error).
+  Future<Trip?> fetchActiveTrip() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final trip = await _tripService.getActiveTrip();
+      if (trip != null) {
+        _activeTrip = trip;
+      }
+      _isLoading = false;
+      notifyListeners();
+      return trip;
+    } on ApiException catch (e) {
+      _error = e.message;
+      _isLoading = false;
+      notifyListeners();
+      return null;
+    } catch (e) {
+      _error = 'Failed to fetch active trip.';
+      _isLoading = false;
+      notifyListeners();
+      return null;
+    }
+  }
+
   /// Create a new emergency trip.
   Future<bool> createTrip({
     required String incidentType,
@@ -56,6 +83,8 @@ class TripProvider extends ChangeNotifier {
       _error = e.message;
       _isLoading = false;
       notifyListeners();
+      // Re-throw 409 errors so caller can show cancel/resume dialog
+      if (e.isConflict) rethrow;
       return false;
     } catch (e) {
       _error = 'Failed to create trip.';
@@ -119,6 +148,30 @@ class TripProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
       return false;
+    }
+  }
+
+  /// Get QR token for paramedic handoff.
+  Future<Map<String, dynamic>?> getQrToken(String tripId) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final qrData = await _tripService.getQrToken(tripId);
+      _isLoading = false;
+      notifyListeners();
+      return qrData;
+    } on ApiException catch (e) {
+      _error = e.message;
+      _isLoading = false;
+      notifyListeners();
+      return null;
+    } catch (e) {
+      _error = 'Failed to get QR token.';
+      _isLoading = false;
+      notifyListeners();
+      return null;
     }
   }
 

@@ -1,12 +1,17 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
+import '../../core/config/app_config.dart';
+import '../../core/map/map_config.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/providers/hospital_provider.dart';
 import '../../core/providers/auth_provider.dart';
+import '../../core/models/trip.dart';
+import '../../core/widgets/map_placeholder.dart';
 import '../../widgets/buttons.dart';
 import '../../widgets/bottom_nav.dart';
 
@@ -29,6 +34,7 @@ class _HospitalCapacityScreenState extends State<HospitalCapacityScreen> {
           children: [
             _CapacityTab(),
             _IncomingTab(),
+            _MapTab(),
             _SettingsTab(),
           ],
         ),
@@ -39,6 +45,7 @@ class _HospitalCapacityScreenState extends State<HospitalCapacityScreen> {
         items: const [
           LifelineNavItem(icon: Icons.bed, label: 'Capacity'),
           LifelineNavItem(icon: Icons.notifications, label: 'Incoming'),
+          LifelineNavItem(icon: Icons.map, label: 'Map'),
           LifelineNavItem(icon: Icons.settings, label: 'Settings'),
         ],
       ),
@@ -56,9 +63,6 @@ class _CapacityTabState extends State<_CapacityTab> {
   int _vacantBeds = 12;
   int _totalBeds = 50;
   int _chaosScore = 4;
-  int _freeDoctors = 3;
-  int _activeDoctors = 8;
-  String _staffingLevel = 'Adequate';
   final Map<String, bool> _equipment = {
     'Ventilators': true,
     'OT Rooms': true,
@@ -194,10 +198,6 @@ class _CapacityTabState extends State<_CapacityTab> {
                         const SizedBox(height: 10),
                         _SyncSummaryRow(label: 'Vacant Beds', value: '$_vacantBeds / $_totalBeds'),
                         const SizedBox(height: 6),
-                        _SyncSummaryRow(label: 'Free Doctors', value: '$_freeDoctors / $_activeDoctors'),
-                        const SizedBox(height: 6),
-                        _SyncSummaryRow(label: 'Staffing Level', value: _staffingLevel),
-                        const SizedBox(height: 6),
                         _SyncSummaryRow(label: 'Chaos Score', value: '$_chaosScore / 10'),
                         const SizedBox(height: 6),
                         _SyncSummaryRow(
@@ -308,6 +308,12 @@ class _CapacityTabState extends State<_CapacityTab> {
       bedAvailable: _vacantBeds,
       bedCapacityTotal: _totalBeds,
       chaosScore: _chaosScore,
+      equipment: {
+        'ventilator': _equipment['Ventilators'] ?? true,
+        'otRooms': _equipment['OT Rooms'] ?? true,
+        'bloodBank': _equipment['Blood Bank'] ?? true,
+        'ctScan': _equipment['X-Ray / CT'] ?? false,
+      },
     );
     if (!mounted) return;
     messenger.showSnackBar(
@@ -489,58 +495,6 @@ class _CapacityTabState extends State<_CapacityTab> {
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 16),
-
-          // ── Doctor Availability ──
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.spaceMd),
-            decoration: BoxDecoration(color: cardColor, borderRadius: AppSpacing.borderRadiusLg),
-            child: Column(
-              children: [
-                _StepperRow(
-                  icon: Icons.person, label: 'FREE DOCTORS', value: _freeDoctors, color: AppColors.lifelineGreen,
-                  onDecrement: () => setState(() { if (_freeDoctors > 0) _freeDoctors--; }),
-                  onIncrement: () => setState(() { if (_freeDoctors < _activeDoctors) _freeDoctors++; }),
-                ),
-                const Divider(height: 24),
-                _StepperRow(
-                  icon: Icons.groups, label: 'DOCTORS ON DUTY', value: _activeDoctors, color: AppColors.medicalBlue,
-                  onDecrement: () => setState(() { if (_activeDoctors > _freeDoctors) _activeDoctors--; }),
-                  onIncrement: () => setState(() => _activeDoctors++),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // ── Staffing Level ──
-          Text('STAFFING LEVEL', style: AppTypography.overline.copyWith(color: AppColors.mediumGray, letterSpacing: 1.5)),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            children: ['Full', 'Adequate', 'Short-staffed', 'Critical'].map((level) {
-              final isSelected = _staffingLevel == level;
-              final color = level == 'Critical' ? AppColors.emergencyRed
-                  : level == 'Short-staffed' ? AppColors.warmOrange
-                  : level == 'Full' ? AppColors.lifelineGreen
-                  : AppColors.medicalBlue;
-              return GestureDetector(
-                onTap: () => setState(() => _staffingLevel = level),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: isSelected ? color.withValues(alpha: 0.15) : cardColor,
-                    borderRadius: AppSpacing.borderRadiusFull,
-                    border: Border.all(color: isSelected ? color : AppColors.lightGray, width: isSelected ? 2 : 1),
-                  ),
-                  child: Text(level, style: AppTypography.caption.copyWith(
-                    color: isSelected ? color : onSurface,
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
-                  )),
-                ),
-              );
-            }).toList(),
           ),
           const SizedBox(height: 16),
 
@@ -989,31 +943,49 @@ class _IncomingTabState extends State<_IncomingTab> {
                           child: GestureDetector(
                             onTap: selectedReason == null
                                 ? null
-                                : () {
+                                : () async {
                                     final reason = selectedReason == 'Other'
                                         ? (customController.text.trim().isNotEmpty
                                             ? customController.text.trim()
                                             : 'Other')
                                         : selectedReason!;
                                     Navigator.of(ctx).pop();
-                                    setState(() {
-                                      _declinedTrips.add(trip.id);
-                                      _declineReasons[trip.id] = reason;
-                                    });
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Row(
-                                          children: const [
-                                            Icon(Icons.info_outline, color: AppColors.white, size: 18),
-                                            SizedBox(width: 8),
-                                            Expanded(child: Text('Patient re-routed — reason recorded')),
-                                          ],
+
+                                    // Call backend reject API
+                                    final hp = context.read<HospitalProvider>();
+                                    final success = await hp.rejectTrip(trip.id, reason);
+
+                                    if (!context.mounted) return;
+
+                                    if (success) {
+                                      setState(() {
+                                        _declinedTrips.add(trip.id);
+                                        _declineReasons[trip.id] = reason;
+                                      });
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Row(
+                                            children: const [
+                                              Icon(Icons.info_outline, color: AppColors.white, size: 18),
+                                              SizedBox(width: 8),
+                                              Expanded(child: Text('Patient re-routed — reason recorded')),
+                                            ],
+                                          ),
+                                          backgroundColor: AppColors.warmOrange,
+                                          behavior: SnackBarBehavior.floating,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                         ),
-                                        backgroundColor: AppColors.warmOrange,
-                                        behavior: SnackBarBehavior.floating,
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                      ),
-                                    );
+                                      );
+                                    } else {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text(hp.error ?? 'Failed to decline trip'),
+                                          backgroundColor: AppColors.emergencyRed,
+                                          behavior: SnackBarBehavior.floating,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                        ),
+                                      );
+                                    }
                                   },
                             child: AnimatedOpacity(
                               opacity: selectedReason == null ? 0.4 : 1.0,
@@ -1519,7 +1491,350 @@ class _HospitalDetailRow extends StatelessWidget {
   }
 }
 
-// ── Tab 2: Settings ──
+// ── Tab 2: Map with Ambulances (wired to real incoming trips) ──
+class _MapTab extends StatefulWidget {
+  @override
+  State<_MapTab> createState() => _MapTabState();
+}
+
+class _MapTabState extends State<_MapTab> {
+  GoogleMapController? _mapController;
+
+  @override
+  void initState() {
+    super.initState();
+    // Refresh incoming trips on tab load
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<HospitalProvider>().fetchIncomingTrips();
+    });
+  }
+
+  @override
+  void dispose() {
+    _mapController?.dispose();
+    super.dispose();
+  }
+
+  Set<Marker> _buildMarkers(List<Trip> trips) {
+    final markers = <Marker>{};
+    // Hospital marker
+    if (AppConfig.enableMaps) {
+      markers.add(
+        Marker(
+          markerId: const MarkerId('hospital'),
+          position: MapConfig.centralHospital,
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+          infoWindow: const InfoWindow(title: 'Hospital'),
+        ),
+      );
+      // Ambulance markers from real trip data
+      for (final trip in trips) {
+        markers.add(
+          Marker(
+            markerId: MarkerId(trip.id),
+            position: LatLng(trip.pickupLatitude, trip.pickupLongitude),
+            icon: BitmapDescriptor.defaultMarkerWithHue(
+              trip.severity >= 7 ? BitmapDescriptor.hueRed : BitmapDescriptor.hueOrange,
+            ),
+            infoWindow: InfoWindow(
+              title: trip.driverName ?? 'Ambulance',
+              snippet: '${trip.incidentType.label} — SEV ${trip.severity}',
+            ),
+          ),
+        );
+      }
+    }
+    return markers;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final hp = context.watch<HospitalProvider>();
+    final trips = hp.incomingTrips;
+    final markers = _buildMarkers(trips);
+
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.spaceMd),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.local_shipping, size: 24, color: AppColors.emergencyRed),
+                  const SizedBox(width: 8),
+                  Text('Ambulance Tracking', style: AppTypography.heading2.copyWith(color: onSurface)),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.lifelineGreen.withValues(alpha: 0.1),
+                  borderRadius: AppSpacing.borderRadiusFull,
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        color: AppColors.lifelineGreen,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'LIVE',
+                      style: AppTypography.overline.copyWith(color: AppColors.lifelineGreen, fontSize: 10),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Map
+          SizedBox(
+            height: 250,
+            child: ClipRRect(
+              borderRadius: AppSpacing.borderRadiusLg,
+              child: AppConfig.enableMaps
+                  ? GoogleMap(
+                      initialCameraPosition: MapConfig.overviewCamera,
+                      markers: markers,
+                      style: MapConfig.darkMapStyle,
+                      liteModeEnabled: true,
+                      myLocationEnabled: false,
+                      zoomControlsEnabled: false,
+                      mapToolbarEnabled: false,
+                      onMapCreated: (controller) {
+                        _mapController = controller;
+                      },
+                    )
+                  : MapPlaceholder.overview(),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Ambulance Cards
+          Row(
+            children: [
+              Text(
+                'Incoming Ambulances',
+                style: AppTypography.bodyL.copyWith(
+                  color: onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.emergencyRed.withValues(alpha: 0.1),
+                  borderRadius: AppSpacing.borderRadiusFull,
+                ),
+                child: Text(
+                  '${trips.length}',
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.emergencyRed,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          Expanded(
+            child: trips.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.check_circle_outline, size: 48, color: AppColors.lifelineGreen.withValues(alpha: 0.4)),
+                        const SizedBox(height: 8),
+                        Text('No incoming ambulances', style: AppTypography.body.copyWith(color: AppColors.mediumGray)),
+                      ],
+                    ),
+                  )
+                : ListView.separated(
+                    itemCount: trips.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final trip = trips[index];
+                      return _RealAmbulanceCard(trip: trip);
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RealAmbulanceCard extends StatelessWidget {
+  final Trip trip;
+  const _RealAmbulanceCard({required this.trip});
+
+  Color _getSeverityColor(int severity) {
+    if (severity >= 8) return AppColors.emergencyRed;
+    if (severity >= 6) return AppColors.warmOrange;
+    return AppColors.softYellow;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cardColor = Theme.of(context).colorScheme.surface;
+    final etaMin = trip.etaSeconds != null ? (trip.etaSeconds! / 60).ceil() : 0;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.spaceMd),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: AppSpacing.borderRadiusLg,
+        border: Border.all(
+          color: _getSeverityColor(trip.severity).withValues(alpha: 0.3),
+          width: 1.5,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.emergencyRed.withValues(alpha: 0.1),
+                  borderRadius: AppSpacing.borderRadiusSm,
+                ),
+                child: const Icon(Icons.local_shipping, size: 20, color: AppColors.emergencyRed),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      trip.driverName ?? 'Ambulance',
+                      style: AppTypography.bodyL.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                    Text(
+                      'Trip: ${trip.id.substring(0, trip.id.length.clamp(0, 8))}...',
+                      style: AppTypography.caption.copyWith(color: AppColors.mediumGray),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: _getSeverityColor(trip.severity).withValues(alpha: 0.1),
+                  borderRadius: AppSpacing.borderRadiusFull,
+                ),
+                child: Text(
+                  'Level ${trip.severity}',
+                  style: AppTypography.caption.copyWith(
+                    color: _getSeverityColor(trip.severity),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Details
+          _MapDetailRow(icon: Icons.favorite, label: 'Emergency', value: trip.incidentType.label),
+          const SizedBox(height: 6),
+          if (trip.hospitalName != null) ...[
+            _MapDetailRow(icon: Icons.local_hospital, label: 'To', value: trip.hospitalName!),
+            const SizedBox(height: 6),
+          ],
+          _MapDetailRow(icon: Icons.info_outline, label: 'Status', value: trip.status.name.toUpperCase()),
+          const SizedBox(height: 12),
+
+          // ETA
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.lifelineGreen.withValues(alpha: 0.1),
+              borderRadius: AppSpacing.borderRadiusSm,
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.timer, size: 16, color: AppColors.lifelineGreen),
+                const SizedBox(width: 6),
+                Text(
+                  etaMin > 0 ? 'ETA: $etaMin min' : 'ETA: —',
+                  style: AppTypography.bodyS.copyWith(
+                    color: AppColors.lifelineGreen,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: AppColors.lifelineGreen,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  trip.status.name.toUpperCase().replaceAll('_', ' '),
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.lifelineGreen,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MapDetailRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _MapDetailRow({required this.icon, required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: AppColors.mediumGray),
+        const SizedBox(width: 6),
+        Text(
+          '$label:',
+          style: AppTypography.caption.copyWith(color: AppColors.mediumGray),
+        ),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Text(
+            value,
+            style: AppTypography.bodyS.copyWith(fontWeight: FontWeight.w500),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Tab 3: Settings ──
 class _SettingsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {

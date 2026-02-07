@@ -8,12 +8,13 @@ class HospitalService {
 
   HospitalService([ApiClient? client]) : _client = client ?? ApiClient.instance;
 
-  /// `PATCH /hospitals/heartbeat` — Update bed capacity and chaos score.
+  /// `PATCH /hospitals/heartbeat` — Update bed capacity, chaos score, and equipment.
   Future<HospitalHeartbeat> sendHeartbeat({
     required int bedAvailable,
     required int bedCapacityTotal,
     required int chaosScore,
     Map<String, dynamic>? crisisParameters,
+    Map<String, bool>? equipment,
   }) async {
     final data = <String, dynamic>{
       'bedAvailable': bedAvailable,
@@ -21,6 +22,7 @@ class HospitalService {
       'chaosScore': chaosScore,
     };
     if (crisisParameters != null) data['crisisParameters'] = crisisParameters;
+    if (equipment != null) data['equipment'] = equipment;
 
     final response = await _client.patch('/hospitals/heartbeat', data: data);
     return HospitalHeartbeat.fromJson(response.data as Map<String, dynamic>);

@@ -38,6 +38,7 @@ class HospitalProvider extends ChangeNotifier {
     required int bedCapacityTotal,
     required int chaosScore,
     Map<String, dynamic>? crisisParameters,
+    Map<String, bool>? equipment,
   }) async {
     _error = null;
     try {
@@ -46,6 +47,7 @@ class HospitalProvider extends ChangeNotifier {
         bedCapacityTotal: bedCapacityTotal,
         chaosScore: chaosScore,
         crisisParameters: crisisParameters,
+        equipment: equipment,
       );
       notifyListeners();
       return true;

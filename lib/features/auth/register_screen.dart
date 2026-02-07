@@ -23,6 +23,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   // ── Required fields (sent to backend) ──
   final _fullNameController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
@@ -45,6 +46,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void dispose() {
     _fullNameController.dispose();
     _phoneController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _ambulanceNumberController.dispose();
@@ -141,6 +143,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       fullName: _fullNameController.text.trim(),
       password: _passwordController.text,
       role: _userRole,
+      email: _emailController.text.trim().isNotEmpty ? _emailController.text.trim() : null,
     );
 
     if (!mounted) return;
@@ -326,6 +329,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
         const SizedBox(height: 16),
 
+        // Email (optional)
+        TextFormField(
+          controller: _emailController,
+          keyboardType: TextInputType.emailAddress,
+          decoration: const InputDecoration(
+            labelText: 'Email (optional)',
+            hintText: 'name@example.com',
+            prefixIcon: Icon(Icons.email_outlined),
+          ),
+          validator: (v) {
+            if (v != null && v.trim().isNotEmpty) {
+              final emailRegex = RegExp(r'^[\w\.-]+@[\w\.-]+\.\w{2,}$');
+              if (!emailRegex.hasMatch(v.trim())) {
+                return 'Enter a valid email address';
+              }
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+
         // Password
         TextFormField(
           controller: _passwordController,
@@ -442,6 +466,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
             labelText: 'Hospital Name',
             hintText: 'e.g. AIIMS Delhi',
             prefixIcon: Icon(Icons.business_outlined),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        TextFormField(
+          keyboardType: TextInputType.emailAddress,
+          decoration: const InputDecoration(
+            labelText: 'Hospital Email (Optional)',
+            hintText: 'e.g. contact@hospital.com',
+            prefixIcon: Icon(Icons.email_outlined),
           ),
         ),
         const SizedBox(height: 16),

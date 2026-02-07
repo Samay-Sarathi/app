@@ -23,7 +23,6 @@ class EmergencyCaseScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final onSurface = theme.colorScheme.onSurface;
-    final cardColor = theme.colorScheme.surface;
 
     return Scaffold(
       body: SafeArea(
@@ -84,33 +83,6 @@ class EmergencyCaseScreen extends StatelessWidget {
                       ),
                     );
                   }).toList(),
-                ),
-              ),
-
-              // Voice input
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.spaceMd),
-                decoration: BoxDecoration(
-                  color: cardColor,
-                  borderRadius: AppSpacing.borderRadiusLg,
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: AppColors.emergencyRed.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.mic, color: AppColors.emergencyRed, size: 22),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      'Voice: "Say emergency type..."',
-                      style: AppTypography.bodyS.copyWith(color: AppColors.mediumGray),
-                    ),
-                  ],
                 ),
               ),
             ],
