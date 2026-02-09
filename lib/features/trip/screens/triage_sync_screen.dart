@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_typography.dart';
-import '../../core/theme/app_spacing.dart';
-import '../../core/providers/trip_provider.dart';
-import '../../core/services/triage_service.dart';
-import '../../core/models/triage_data.dart';
-import '../../widgets/buttons.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_typography.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/providers/trip_provider.dart';
+import '../../../core/services/triage_service.dart';
+import '../../../core/models/triage_data.dart';
+import '../../../shared/widgets/buttons.dart';
 
 class TriageSyncScreen extends StatefulWidget {
   const TriageSyncScreen({super.key});

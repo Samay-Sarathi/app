@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_typography.dart';
-import '../../core/theme/app_spacing.dart';
-import '../../core/providers/trip_provider.dart';
-import '../../widgets/buttons.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_typography.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/providers/trip_provider.dart';
+import '../../../core/network/api_exceptions.dart';
+import '../../../shared/widgets/buttons.dart';
 
 class SeverityRatingScreen extends StatefulWidget {
   final String caseType;
@@ -35,24 +37,71 @@ class _SeverityRatingScreenState extends State<SeverityRatingScreen> {
     final messenger = ScaffoldMessenger.of(context);
     final nav = GoRouter.of(context);
 
-    // Use mock pickup coordinates (Delhi center — replace with real GPS later)
-    const pickupLat = 28.6139;
-    const pickupLng = 77.2090;
+    // Step 0: Get real device GPS location
+    double pickupLat;
+    double pickupLng;
+    try {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('Location permission is required to find nearby hospitals'),
+            backgroundColor: AppColors.emergencyRed,
+          ),
+        );
+        return;
+      }
 
-    // Step 1: Create trip
-    final created = await tripProvider.createTrip(
-      incidentType: widget.incidentType,
-      severity: _severity.round(),
-      pickupLatitude: pickupLat,
-      pickupLongitude: pickupLng,
-    );
-
-    if (!mounted) return;
-
-    if (!created) {
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
+      pickupLat = position.latitude;
+      pickupLng = position.longitude;
+    } catch (e) {
+      if (!mounted) return;
       messenger.showSnackBar(
         SnackBar(
-          content: Text(tripProvider.error ?? 'Failed to create trip'),
+          content: Text('Could not get GPS location: $e'),
+          backgroundColor: AppColors.emergencyRed,
+        ),
+      );
+      return;
+    }
+
+    // Step 1: Create trip
+    try {
+      final created = await tripProvider.createTrip(
+        incidentType: widget.incidentType,
+        severity: _severity.round(),
+        pickupLatitude: pickupLat,
+        pickupLongitude: pickupLng,
+      );
+
+      if (!mounted) return;
+
+      if (!created) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(tripProvider.error ?? 'Failed to create trip'),
+            backgroundColor: AppColors.emergencyRed,
+          ),
+        );
+        return;
+      }
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(e.isConflict
+              ? 'You already have an active trip. Complete or cancel it first.'
+              : e.message),
           backgroundColor: AppColors.emergencyRed,
         ),
       );

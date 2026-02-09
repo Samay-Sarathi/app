@@ -2,15 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
-import '../../core/config/app_config.dart';
-import '../../core/map/map_config.dart';
-import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_typography.dart';
-import '../../core/theme/app_spacing.dart';
-import '../../core/providers/trip_provider.dart';
-import '../../core/models/hospital_recommendation.dart';
-import '../../widgets/buttons.dart';
-import '../../core/widgets/map_placeholder.dart';
+import '../../../core/config/app_config.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_typography.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/providers/trip_provider.dart';
+import '../../../core/models/hospital_recommendation.dart';
+import '../../../shared/widgets/buttons.dart';
+import '../../../shared/widgets/map_placeholder.dart';
 
 class HospitalSelectionScreen extends StatefulWidget {
   const HospitalSelectionScreen({super.key});
@@ -222,10 +221,13 @@ class _HospitalSelectionScreenState extends State<HospitalSelectionScreen> {
                             target: LatLng(selected.latitude, selected.longitude),
                             zoom: 13,
                           )
-                        : MapConfig.overviewCamera,
+                        : const CameraPosition(
+                            target: LatLng(12.8456, 77.6603),
+                            zoom: 14.0,
+                          ),
                     markers: markers,
-                    liteModeEnabled: false,
-                    myLocationEnabled: false,
+                    myLocationEnabled: true,
+                    myLocationButtonEnabled: false,
                     zoomControlsEnabled: false,
                     mapToolbarEnabled: false,
                     onMapCreated: (controller) {
@@ -234,6 +236,31 @@ class _HospitalSelectionScreenState extends State<HospitalSelectionScreen> {
                   )
                 : MapPlaceholder.hospitalSelect(),
           ),
+
+          // DEV_ONLY: Cancel trip button for testing
+          if (AppConfig.devMode)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.spaceMd, vertical: 4),
+              child: SizedBox(
+                width: double.infinity,
+                height: 36,
+                child: OutlinedButton.icon(
+                  onPressed: () async {
+                    final tp = context.read<TripProvider>();
+                    final nav = GoRouter.of(context);
+                    await tp.cancelTrip(reason: 'DEV: Manual cancel');
+                    if (context.mounted) nav.go('/driver/dashboard');
+                  },
+                  icon: const Icon(Icons.bug_report, size: 14),
+                  label: const Text('[DEV] Cancel Trip', style: TextStyle(fontSize: 12)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.warmOrange,
+                    side: const BorderSide(color: AppColors.warmOrange),
+                    padding: EdgeInsets.zero,
+                  ),
+                ),
+              ),
+            ),
 
           // Hospital list / detail
           if (hasRecs && selected != null)
