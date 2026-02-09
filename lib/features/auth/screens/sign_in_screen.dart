@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_typography.dart';
-import '../../core/theme/app_spacing.dart';
-import '../../core/providers/auth_provider.dart';
-import '../../widgets/buttons.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_typography.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/config/app_config.dart';
+import '../../../core/providers/auth_provider.dart';
+import '../../../shared/widgets/buttons.dart';
 
 class SignInScreen extends StatefulWidget {
   final String role;
@@ -99,7 +100,7 @@ class _SignInScreenState extends State<SignInScreen>
       case 'driver':
         return '/driver/dashboard';
       case 'police':
-        return '/driver/dashboard';
+        return '/police/dashboard';
       case 'hospital':
         return '/hospital/capacity';
       case 'admin':
@@ -111,19 +112,26 @@ class _SignInScreenState extends State<SignInScreen>
 
   bool get _isAdmin => widget.role == 'admin';
 
-  String get _devCredentialHint {
+  /// Dev phone number (without +91 prefix) for quick-fill.
+  String get _devPhone {
     switch (widget.role) {
       case 'driver':
-        return 'Dev: +919999999999 • password123';
+        return '9999999999';
       case 'hospital':
-        return 'Dev: +918888888888 • password123';
+        return '8888888888';
       case 'police':
-        return 'Dev: +917777777777 • password123';
+        return '7777777777';
       case 'admin':
-        return 'Dev: +916666666666 • password123';
+        return '6666666666';
       default:
-        return 'Dev: phone + password123';
+        return '9999999999';
     }
+  }
+
+  /// Auto-fill dev credentials and trigger login.
+  void _quickFillDev() {
+    _phoneController.text = _devPhone;
+    _passwordController.text = 'password123';
   }
 
   // ── Actions ──
@@ -140,9 +148,8 @@ class _SignInScreenState extends State<SignInScreen>
       return;
     }
 
-    // Prepend +91 if user entered raw 10-digit number
-    final phoneNumber =
-        phone.startsWith('+') ? phone : '+91$phone';
+    // Always prepend +91
+    final phoneNumber = '+91${phone.replaceAll(RegExp(r'[^\d]'), '')}';
 
     final router = GoRouter.of(context);
     final messenger = ScaffoldMessenger.of(context);
@@ -211,26 +218,7 @@ class _SignInScreenState extends State<SignInScreen>
                             color: onSurface, size: 20),
                       ),
                     ),
-                    // Demo bypass
-                    GestureDetector(
-                      onTap: () => context.go(_dashboardRoute),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 6),
-                        decoration: BoxDecoration(
-                          color:
-                              AppColors.lifelineGreen.withValues(alpha: 0.1),
-                          borderRadius: AppSpacing.borderRadiusFull,
-                        ),
-                        child: Text(
-                          'Demo →',
-                          style: AppTypography.caption.copyWith(
-                            color: AppColors.lifelineGreen,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
+                    const SizedBox(width: 40),
                   ],
                 ),
 
@@ -265,37 +253,6 @@ class _SignInScreenState extends State<SignInScreen>
                   ),
                 ),
 
-                const SizedBox(height: 36),
-
-                // ── Dev-mode info badge ──
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: _roleColor.withValues(alpha: 0.06),
-                    borderRadius: AppSpacing.borderRadiusMd,
-                    border: Border.all(
-                      color: _roleColor.withValues(alpha: 0.15),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.info_outline,
-                          size: 18, color: _roleColor),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          _devCredentialHint,
-                          style: AppTypography.caption.copyWith(
-                            color: _roleColor,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
                 const SizedBox(height: 24),
 
                 // ── Phone number field ──
@@ -303,20 +260,21 @@ class _SignInScreenState extends State<SignInScreen>
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
                   inputFormatters: [
-                    FilteringTextInputFormatter.allow(
-                        RegExp(r'[\d+]')),
-                    LengthLimitingTextInputFormatter(15),
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(10),
                   ],
                   decoration: InputDecoration(
                     labelText: 'Phone Number',
-                    hintText: '+919100000001',
+                    hintText: '9999999999',
                     prefixIcon: Container(
                       width: 52,
                       alignment: Alignment.center,
                       child: Text(
-                        '📱',
-                        style: AppTypography.body
-                            .copyWith(fontSize: 20),
+                        '+91',
+                        style: AppTypography.body.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: _roleColor,
+                        ),
                       ),
                     ),
                   ),
@@ -353,6 +311,38 @@ class _SignInScreenState extends State<SignInScreen>
                   isLoading: auth.isLoading,
                   onPressed:
                       auth.isLoading ? null : _handleLogin,
+                ),
+
+                const SizedBox(height: 12),
+
+                // DEV_ONLY: Quick-fill credentials for testing
+                if (AppConfig.devMode)
+                GestureDetector(
+                  onTap: auth.isLoading ? null : _quickFillDev,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: _roleColor.withValues(alpha: 0.3),
+                      ),
+                      borderRadius: AppSpacing.borderRadiusMd,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.bug_report_outlined,
+                            size: 16, color: _roleColor),
+                        const SizedBox(width: 8),
+                        Text(
+                          '[DEV] Quick Fill',
+                          style: AppTypography.bodyS.copyWith(
+                            color: _roleColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
 
                 const SizedBox(height: 28),

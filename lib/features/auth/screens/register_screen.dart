@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_typography.dart';
-import '../../core/theme/app_spacing.dart';
-import '../../core/providers/auth_provider.dart';
-import '../../core/models/user_role.dart';
-import '../../widgets/buttons.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_typography.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/providers/auth_provider.dart';
+import '../../../core/models/user_role.dart';
+import '../../../shared/widgets/buttons.dart';
 
 class RegisterScreen extends StatefulWidget {
   final String role;
@@ -133,7 +133,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     auth.clearError();
 
     final phone = _phoneController.text.trim();
-    final phoneNumber = phone.startsWith('+') ? phone : '+91$phone';
+    final phoneNumber = '+91${phone.replaceAll(RegExp(r'[^\d]'), '')}';
 
     final router = GoRouter.of(context);
     final messenger = ScaffoldMessenger.of(context);
@@ -305,25 +305,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
           controller: _phoneController,
           keyboardType: TextInputType.phone,
           inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp(r'[\d+]')),
-            LengthLimitingTextInputFormatter(15),
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(10),
           ],
           decoration: InputDecoration(
             labelText: 'Phone Number',
-            hintText: '+919100000001',
+            hintText: '9999999999',
             prefixIcon: Container(
               width: 52,
               alignment: Alignment.center,
               child: Text(
-                '📱',
-                style: AppTypography.body.copyWith(fontSize: 20),
+                '+91',
+                style: AppTypography.body.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
           validator: (v) {
             if (v == null || v.trim().isEmpty) return 'Phone number is required';
             final digits = v.replaceAll(RegExp(r'[^\d]'), '');
-            if (digits.length < 10) return 'Enter a valid phone number';
+            if (digits.length != 10) return 'Enter a valid 10-digit phone number';
             return null;
           },
         ),
