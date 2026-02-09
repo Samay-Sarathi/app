@@ -4,6 +4,9 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/providers/auth_provider.dart';
+import '../../core/providers/trip_provider.dart';
+import '../../core/models/user_role.dart';
+import '../../core/models/trip_status.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -42,11 +45,41 @@ class _SplashScreenState extends State<SplashScreen>
     await auth.tryRestoreSession();
     await Future.delayed(const Duration(milliseconds: 2500));
     if (!mounted) return;
-    if (auth.isAuthenticated) {
-      context.go(auth.dashboardRoute);
-    } else {
+
+    if (!auth.isAuthenticated) {
       context.go('/roles');
+      return;
     }
+
+    // For drivers, check if there's an active trip to resume
+    if (auth.role == UserRole.driver) {
+      final tripProvider = context.read<TripProvider>();
+      final trip = await tripProvider.fetchActiveTrip();
+      if (!mounted) return;
+
+      if (trip != null && trip.status.isActive) {
+        // Resume to the appropriate screen based on trip status
+        switch (trip.status) {
+          case TripStatus.triage:
+            // Trip created but no hospital selected yet — go to hospital select
+            await tripProvider.fetchRecommendations();
+            if (!mounted) return;
+            context.go('/driver/hospital-select');
+            return;
+          case TripStatus.destinationLocked:
+          case TripStatus.enRoute:
+            context.go('/driver/navigation');
+            return;
+          case TripStatus.arrived:
+            context.go('/driver/triage');
+            return;
+          default:
+            break;
+        }
+      }
+    }
+
+    context.go(auth.dashboardRoute);
   }
 
   @override

@@ -3,16 +3,15 @@ import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../core/config/app_config.dart';
-import '../../core/map/map_config.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/models/trip.dart';
 import '../../core/services/police_service.dart';
-import '../../core/widgets/map_placeholder.dart';
-import '../../widgets/bottom_nav.dart';
-import '../../widgets/status_badge.dart';
+import '../../shared/widgets/map_placeholder.dart';
+import '../../shared/widgets/bottom_nav.dart';
+import '../../shared/widgets/status_badge.dart';
 
 class PoliceDashboardScreen extends StatefulWidget {
   const PoliceDashboardScreen({super.key});
@@ -516,7 +515,18 @@ class _MapTabState extends State<_MapTab> {
               borderRadius: AppSpacing.borderRadiusLg,
               child: AppConfig.enableMaps
                   ? GoogleMap(
-                      initialCameraPosition: MapConfig.overviewCamera,
+                      initialCameraPosition: widget.trips.isNotEmpty
+                          ? CameraPosition(
+                              target: LatLng(
+                                widget.trips.first.pickupLatitude,
+                                widget.trips.first.pickupLongitude,
+                              ),
+                              zoom: 13,
+                            )
+                          : const CameraPosition(
+                              target: LatLng(12.8456, 77.6603),
+                              zoom: 14.0,
+                            ),
                       markers: {
                         for (final t in widget.trips)
                           Marker(
@@ -531,9 +541,8 @@ class _MapTabState extends State<_MapTab> {
                             ),
                           ),
                       },
-                      style: MapConfig.darkMapStyle,
-                      liteModeEnabled: false,
-                      myLocationEnabled: false,
+                      myLocationEnabled: true,
+                      myLocationButtonEnabled: false,
                       zoomControlsEnabled: false,
                       mapToolbarEnabled: false,
                       onMapCreated: (c) => _mapController = c,

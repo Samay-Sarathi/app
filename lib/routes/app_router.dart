@@ -1,18 +1,18 @@
 import 'package:go_router/go_router.dart';
 import '../features/splash/splash_screen.dart';
-import '../features/auth/role_selection_screen.dart';
-import '../features/auth/sign_in_screen.dart';
-import '../features/auth/register_screen.dart';
+import '../features/auth/screens/role_selection_screen.dart';
+import '../features/auth/screens/sign_in_screen.dart';
+import '../features/auth/screens/register_screen.dart';
 import '../features/driver/driver_dashboard_screen.dart';
-import '../features/driver/emergency_case_screen.dart';
-import '../features/driver/severity_rating_screen.dart';
-import '../features/driver/hospital_selection_screen.dart';
-import '../features/driver/navigation_screen.dart';
-import '../features/driver/green_corridor_screen.dart';
-import '../features/driver/triage_sync_screen.dart';
-import '../features/hospital/emergency_alert_screen.dart';
-import '../features/hospital/ambulance_sync_screen.dart';
-import '../features/hospital/hospital_capacity_screen.dart';
+import '../features/trip/screens/emergency_case_screen.dart';
+import '../features/trip/screens/severity_rating_screen.dart';
+import '../features/trip/screens/hospital_selection_screen.dart';
+import '../features/trip/screens/navigation_screen.dart';
+import '../features/trip/screens/triage_sync_screen.dart';
+import '../features/hospital/screens/emergency_alert_screen.dart';
+import '../features/paramedic/screens/qr_scan_screen.dart';
+import '../features/hospital/screens/ambulance_sync_screen.dart';
+import '../features/hospital/hospital_dashboard_screen.dart';
 import '../features/admin/admin_dashboard_screen.dart';
 import '../features/police/police_dashboard_screen.dart';
 
@@ -79,10 +79,6 @@ class AppRouter {
         builder: (context, state) => const NavigationScreen(),
       ),
       GoRoute(
-        path: '/driver/green-corridor',
-        builder: (context, state) => const GreenCorridorScreen(),
-      ),
-      GoRoute(
         path: '/driver/triage',
         builder: (context, state) => const TriageSyncScreen(),
       ),
@@ -98,7 +94,7 @@ class AppRouter {
       ),
       GoRoute(
         path: '/hospital/capacity',
-        builder: (context, state) => const HospitalCapacityScreen(),
+        builder: (context, state) => const HospitalDashboardScreen(),
       ),
 
       // Admin routes
@@ -111,6 +107,12 @@ class AppRouter {
       GoRoute(
         path: '/police/dashboard',
         builder: (context, state) => const PoliceDashboardScreen(),
+      ),
+
+      // Paramedic routes
+      GoRoute(
+        path: '/paramedic/qr-scan',
+        builder: (context, state) => const QrScanScreen(),
       ),
     ],
   );

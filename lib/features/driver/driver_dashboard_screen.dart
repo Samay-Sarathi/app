@@ -3,17 +3,17 @@ import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../core/config/app_config.dart';
-import '../../core/map/map_config.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/providers/settings_provider.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/trip_provider.dart';
-import '../../widgets/status_badge.dart';
-import '../../widgets/info_card.dart';
-import '../../widgets/bottom_nav.dart';
-import '../../core/widgets/map_placeholder.dart';
+import '../../core/models/trip_status.dart';
+import '../../shared/widgets/status_badge.dart';
+import '../../shared/widgets/info_card.dart';
+import '../../shared/widgets/bottom_nav.dart';
+import '../../shared/widgets/map_placeholder.dart';
 
 class DriverDashboardScreen extends StatefulWidget {
   const DriverDashboardScreen({super.key});
@@ -24,6 +24,15 @@ class DriverDashboardScreen extends StatefulWidget {
 
 class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
   int _navIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Fetch any active trip on dashboard load (for resume capability)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<TripProvider>().fetchActiveTrip();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -95,9 +104,70 @@ class _StatusTab extends StatelessWidget {
               final trip = context.watch<TripProvider>().activeTrip;
               final auth = context.watch<AuthProvider>();
               if (trip != null && trip.status.isActive) {
-                return Text(
-                  'Active: ${trip.incidentType.label} — ${trip.status.name.toUpperCase()}',
-                  style: AppTypography.bodyS.copyWith(color: AppColors.emergencyRed),
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Active: ${trip.incidentType.label} — ${trip.status.label}',
+                      style: AppTypography.bodyS.copyWith(color: AppColors.emergencyRed),
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          switch (trip.status) {
+                            case TripStatus.triage:
+                              context.go('/driver/hospital-select');
+                              break;
+                            case TripStatus.destinationLocked:
+                            case TripStatus.enRoute:
+                              context.go('/driver/navigation');
+                              break;
+                            case TripStatus.arrived:
+                              context.go('/driver/triage');
+                              break;
+                            default:
+                              break;
+                          }
+                        },
+                        icon: const Icon(Icons.play_arrow, size: 18),
+                        label: Text('Resume Trip — ${trip.status.label}'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.emergencyRed,
+                          side: const BorderSide(color: AppColors.emergencyRed),
+                          shape: RoundedRectangleBorder(borderRadius: AppSpacing.borderRadiusSm),
+                        ),
+                      ),
+                    ),
+                    // DEV_ONLY: Cancel trip button for testing
+                    if (AppConfig.devMode) ...[                      const SizedBox(height: 6),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () async {
+                            final tripProvider = context.read<TripProvider>();
+                            final cancelled = await tripProvider.cancelTrip(reason: 'DEV: Manual cancel');
+                            if (context.mounted && cancelled) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('[DEV] Trip cancelled'),
+                                  backgroundColor: AppColors.warmOrange,
+                                ),
+                              );
+                            }
+                          },
+                          icon: const Icon(Icons.bug_report, size: 16),
+                          label: const Text('[DEV] Cancel Trip'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.warmOrange,
+                            side: const BorderSide(color: AppColors.warmOrange),
+                            shape: RoundedRectangleBorder(borderRadius: AppSpacing.borderRadiusSm),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 );
               }
               return Text(
@@ -110,39 +180,24 @@ class _StatusTab extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          // City grid placeholder
+          // Live area map
           Expanded(
             flex: 3,
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: AppColors.commandDark,
-                borderRadius: AppSpacing.borderRadiusLg,
-              ),
-              child: Stack(
-                children: [
-                  CustomPaint(
-                    size: Size.infinite,
-                    painter: _GridPainter(),
-                  ),
-                  Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.map, size: 48, color: AppColors.lifelineGreen.withValues(alpha: 0.5)),
-                        const SizedBox(height: 8),
-                        Text(
-                          'LIVE CITY GRID',
-                          style: AppTypography.caption.copyWith(
-                            color: AppColors.lifelineGreen.withValues(alpha: 0.7),
-                            letterSpacing: 2,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+            child: ClipRRect(
+              borderRadius: AppSpacing.borderRadiusLg,
+              child: AppConfig.enableMaps
+                  ? GoogleMap(
+                      initialCameraPosition: const CameraPosition(
+                        target: LatLng(12.8456, 77.6603),
+                        zoom: 13,
+                      ),
+                      myLocationEnabled: true,
+                      myLocationButtonEnabled: false,
+                      zoomControlsEnabled: false,
+                      mapToolbarEnabled: false,
+                      trafficEnabled: true,
+                    )
+                  : MapPlaceholder.overview(),
             ),
           ),
           const SizedBox(height: 16),
@@ -200,53 +255,10 @@ class _MapTab extends StatefulWidget {
 
 class _MapTabState extends State<_MapTab> {
   GoogleMapController? _mapController;
-  late final Set<Marker> _markers;
 
   @override
   void initState() {
     super.initState();
-    if (AppConfig.enableMaps) {
-      _markers = {
-        Marker(
-          markerId: const MarkerId('ambulance_a01'),
-          position: MapConfig.ambulanceA01,
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
-          infoWindow: const InfoWindow(title: 'A-01', snippet: 'Active'),
-        ),
-        Marker(
-          markerId: const MarkerId('ambulance_a02'),
-          position: MapConfig.ambulanceA02,
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
-          infoWindow: const InfoWindow(title: 'A-02', snippet: 'Active'),
-        ),
-        Marker(
-          markerId: const MarkerId('ambulance_a03'),
-          position: MapConfig.ambulanceA03,
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
-          infoWindow: const InfoWindow(title: 'A-03', snippet: 'Idle'),
-        ),
-        Marker(
-          markerId: const MarkerId('central_hospital'),
-          position: MapConfig.centralHospital,
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-          infoWindow: const InfoWindow(title: 'Central Hospital'),
-        ),
-        Marker(
-          markerId: const MarkerId('city_hospital'),
-          position: MapConfig.cityHospital,
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-          infoWindow: const InfoWindow(title: 'City Hospital'),
-        ),
-        Marker(
-          markerId: const MarkerId('user'),
-          position: MapConfig.userLocation,
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-          infoWindow: const InfoWindow(title: 'You'),
-        ),
-      };
-    } else {
-      _markers = {};
-    }
   }
 
   @override
@@ -277,13 +289,15 @@ class _MapTabState extends State<_MapTab> {
               borderRadius: AppSpacing.borderRadiusLg,
               child: AppConfig.enableMaps
                   ? GoogleMap(
-                      initialCameraPosition: MapConfig.overviewCamera,
-                      markers: _markers,
-                      style: MapConfig.darkMapStyle,
-                      liteModeEnabled: false,
-                      myLocationEnabled: false,
+                      initialCameraPosition: const CameraPosition(
+                        target: LatLng(12.8456, 77.6603),
+                        zoom: 13,
+                      ),
+                      myLocationEnabled: true,
+                      myLocationButtonEnabled: true,
                       zoomControlsEnabled: false,
                       mapToolbarEnabled: false,
+                      trafficEnabled: true,
                       onMapCreated: (controller) {
                         _mapController = controller;
                       },
@@ -600,25 +614,6 @@ class _AlertsTab extends StatelessWidget {
 }
 
 // ── Shared private widgets ──
-
-class _GridPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = AppColors.lifelineGreen.withValues(alpha: 0.1)
-      ..strokeWidth = 0.5;
-
-    for (double x = 0; x < size.width; x += 30) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-    for (double y = 0; y < size.height; y += 30) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
 
 class _SettingToggle extends StatelessWidget {
   final IconData icon;
