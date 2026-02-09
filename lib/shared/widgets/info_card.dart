@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../core/theme/app_colors.dart';
-import '../core/theme/app_typography.dart';
-import '../core/theme/app_spacing.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_typography.dart';
+import '../../core/theme/app_spacing.dart';
 
 class InfoCard extends StatelessWidget {
   final String title;

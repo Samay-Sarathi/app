@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import '../core/theme/app_colors.dart';
-import '../core/theme/app_spacing.dart';
-import '../core/providers/settings_provider.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_spacing.dart';
+import '../../core/providers/settings_provider.dart';
 
 void _haptic(BuildContext context, {bool heavy = false}) {
   final enabled = context.read<SettingsProvider>().hapticsEnabled;
