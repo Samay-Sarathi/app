@@ -13,6 +13,8 @@ class TripProvider extends ChangeNotifier {
   Trip? _activeTrip;
   List<HospitalRecommendation> _recommendations = [];
   HandshakeResult? _handshakeResult;
+  double? _selectedHospitalLat;
+  double? _selectedHospitalLng;
   bool _isLoading = false;
   String? _error;
 
@@ -24,6 +26,8 @@ class TripProvider extends ChangeNotifier {
   Trip? get activeTrip => _activeTrip;
   List<HospitalRecommendation> get recommendations => _recommendations;
   HandshakeResult? get handshakeResult => _handshakeResult;
+  double? get selectedHospitalLat => _selectedHospitalLat;
+  double? get selectedHospitalLng => _selectedHospitalLng;
   bool get isLoading => _isLoading;
   String? get error => _error;
   bool get hasActiveTrip => _activeTrip != null && _activeTrip!.status.isActive;
@@ -125,6 +129,13 @@ class TripProvider extends ChangeNotifier {
     _isLoading = true;
     _error = null;
     notifyListeners();
+
+    // Save hospital coordinates from recommendations before locking
+    final rec = _recommendations.where((r) => r.hospitalId == hospitalId).toList();
+    if (rec.isNotEmpty) {
+      _selectedHospitalLat = rec.first.latitude;
+      _selectedHospitalLng = rec.first.longitude;
+    }
 
     try {
       _handshakeResult = await _tripService.handshake(
@@ -239,8 +250,38 @@ class TripProvider extends ChangeNotifier {
     _activeTrip = null;
     _recommendations = [];
     _handshakeResult = null;
+    _selectedHospitalLat = null;
+    _selectedHospitalLng = null;
     _error = null;
     notifyListeners();
+  }
+
+  /// Link paramedic via scanned QR token.
+  Future<Map<String, dynamic>?> linkParamedic(String paramedicToken) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final result = await _tripService.linkParamedic(paramedicToken);
+      // Refresh active trip if it was updated
+      if (_activeTrip != null) {
+        _activeTrip = await _tripService.getTrip(_activeTrip!.id);
+      }
+      _isLoading = false;
+      notifyListeners();
+      return result;
+    } on ApiException catch (e) {
+      _error = e.message;
+      _isLoading = false;
+      notifyListeners();
+      return null;
+    } catch (e) {
+      _error = 'Failed to link paramedic.';
+      _isLoading = false;
+      notifyListeners();
+      return null;
+    }
   }
 
   void clearError() {

@@ -41,7 +41,7 @@ class ApiException implements Exception {
 /// Thrown when there is no network connectivity.
 class NetworkException implements Exception {
   final String message;
-  const NetworkException([this.message = 'No internet connection']);
+  const NetworkException([this.message = 'Unable to connect to server. Please check your network and ensure the server is running.']);
 
   @override
   String toString() => 'NetworkException: $message';

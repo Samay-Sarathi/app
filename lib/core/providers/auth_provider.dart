@@ -108,7 +108,7 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return false;
     } on NetworkException {
-      _error = 'No internet connection. Please check your network.';
+      _error = 'Unable to connect to server. Please check your network and ensure the server is running.';
       _isLoading = false;
       notifyListeners();
       return false;
@@ -159,7 +159,7 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return false;
     } on NetworkException {
-      _error = 'No internet connection.';
+      _error = 'Unable to connect to server. Please check your network.';
       _isLoading = false;
       notifyListeners();
       return false;

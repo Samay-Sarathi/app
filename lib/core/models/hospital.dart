@@ -4,6 +4,8 @@ class HandshakeResult {
   final String tripId;
   final String hospitalId;
   final String hospitalName;
+  final double hospitalLatitude;
+  final double hospitalLongitude;
   final String paramedicToken;
   final DateTime tokenExpiresAt;
   final int? etaSeconds;
@@ -12,6 +14,8 @@ class HandshakeResult {
     required this.tripId,
     required this.hospitalId,
     required this.hospitalName,
+    required this.hospitalLatitude,
+    required this.hospitalLongitude,
     required this.paramedicToken,
     required this.tokenExpiresAt,
     this.etaSeconds,
@@ -22,6 +26,8 @@ class HandshakeResult {
       tripId: json['tripId'] as String,
       hospitalId: json['hospitalId'] as String,
       hospitalName: json['hospitalName'] as String,
+      hospitalLatitude: (json['hospitalLatitude'] as num?)?.toDouble() ?? 0,
+      hospitalLongitude: (json['hospitalLongitude'] as num?)?.toDouble() ?? 0,
       paramedicToken: json['paramedicToken'] as String,
       tokenExpiresAt: DateTime.parse(json['tokenExpiresAt'] as String),
       etaSeconds: json['etaSeconds'] as int?,
@@ -33,6 +39,8 @@ class HandshakeResult {
 class HospitalHeartbeat {
   final String hospitalId;
   final String name;
+  final double latitude;
+  final double longitude;
   final int bedAvailable;
   final int bedCapacityTotal;
   final int bedReserved;
@@ -43,6 +51,8 @@ class HospitalHeartbeat {
   const HospitalHeartbeat({
     required this.hospitalId,
     required this.name,
+    required this.latitude,
+    required this.longitude,
     required this.bedAvailable,
     required this.bedCapacityTotal,
     required this.bedReserved,
@@ -55,6 +65,8 @@ class HospitalHeartbeat {
     return HospitalHeartbeat(
       hospitalId: json['hospitalId'] as String,
       name: json['name'] as String? ?? '',
+      latitude: (json['latitude'] as num?)?.toDouble() ?? 0,
+      longitude: (json['longitude'] as num?)?.toDouble() ?? 0,
       bedAvailable: json['bedAvailable'] as int? ?? 0,
       bedCapacityTotal: json['bedCapacityTotal'] as int? ?? 0,
       bedReserved: json['bedReserved'] as int? ?? 0,

@@ -26,6 +26,8 @@ class Trip {
   final String? driverName;
   final String? paramedicName;
   final String? hospitalName;
+  final double? hospitalLatitude;
+  final double? hospitalLongitude;
 
   const Trip({
     required this.id,
@@ -49,6 +51,8 @@ class Trip {
     this.driverName,
     this.paramedicName,
     this.hospitalName,
+    this.hospitalLatitude,
+    this.hospitalLongitude,
   });
 
   factory Trip.fromJson(Map<String, dynamic> json) {
@@ -74,6 +78,8 @@ class Trip {
       driverName: json['driverName'] as String?,
       paramedicName: json['paramedicName'] as String?,
       hospitalName: json['hospitalName'] as String?,
+      hospitalLatitude: (json['hospitalLatitude'] as num?)?.toDouble(),
+      hospitalLongitude: (json['hospitalLongitude'] as num?)?.toDouble(),
     );
   }
 

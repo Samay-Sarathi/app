@@ -2,10 +2,15 @@
 class AppConfig {
   AppConfig._();
 
+  // ── DEV_ONLY: Set to false for production builds ──
+  static const bool devMode = true;
+
   /// Backend API base URL.
-  /// Switch to production URL before release.
-  static const String baseUrl = 'http://10.0.2.2:8080/api/v1'; // Android emulator → localhost
-  // static const String baseUrl = 'http://localhost:8080/api/v1'; // iOS simulator
+  /// - Physical device: use localhost + `adb reverse tcp:8080 tcp:8080`
+  /// - Android emulator: use http://10.0.2.2:8080/api/v1
+  /// - Production: use https://api.lifeline.app/api/v1
+  static const String baseUrl = 'http://localhost:8080/api/v1'; // Physical device via adb reverse
+  // static const String baseUrl = 'http://10.0.2.2:8080/api/v1'; // Android emulator → localhost
   // static const String baseUrl = 'https://api.lifeline.app/api/v1'; // Production
 
   /// Master switch for Google Maps.
