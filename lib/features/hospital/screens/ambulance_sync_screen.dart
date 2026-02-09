@@ -2,18 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
-import '../../core/config/app_config.dart';
-import '../../core/map/map_config.dart';
-import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_typography.dart';
-import '../../core/theme/app_spacing.dart';
-import '../../core/providers/hospital_provider.dart';
-import '../../core/services/websocket_service.dart';
-import '../../core/services/triage_service.dart';
-import '../../core/models/triage_data.dart';
-import '../../core/widgets/map_placeholder.dart';
-import '../../widgets/buttons.dart';
-import '../../widgets/status_badge.dart';
+import '../../../core/config/app_config.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_typography.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/providers/hospital_provider.dart';
+import '../../../core/services/websocket_service.dart';
+import '../../../core/services/triage_service.dart';
+import '../../../core/models/triage_data.dart';
+import '../../../core/models/trip.dart';
+import '../../../shared/widgets/map_placeholder.dart';
+import '../../../shared/widgets/buttons.dart';
+import '../../../shared/widgets/status_badge.dart';
 
 class AmbulanceSyncScreen extends StatefulWidget {
   const AmbulanceSyncScreen({super.key});
@@ -24,8 +24,6 @@ class AmbulanceSyncScreen extends StatefulWidget {
 
 class _AmbulanceSyncScreenState extends State<AmbulanceSyncScreen> {
   GoogleMapController? _mapController;
-  late final Set<Marker> _markers;
-  late final Set<Polyline> _polylines;
 
   // Live vitals from WebSocket
   final TriageService _triageService = TriageService();
@@ -38,33 +36,6 @@ class _AmbulanceSyncScreenState extends State<AmbulanceSyncScreen> {
   @override
   void initState() {
     super.initState();
-    if (AppConfig.enableMaps) {
-      _markers = {
-        Marker(
-          markerId: const MarkerId('ambulance'),
-          position: MapConfig.ambulanceA01,
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-          infoWindow: const InfoWindow(title: 'Ambulance A-01'),
-        ),
-        Marker(
-          markerId: const MarkerId('hospital'),
-          position: MapConfig.centralHospital,
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-          infoWindow: const InfoWindow(title: 'Central Hospital'),
-        ),
-      };
-      _polylines = {
-        const Polyline(
-          polylineId: PolylineId('sync_route'),
-          points: MapConfig.ambulanceSyncRoute,
-          color: AppColors.lifelineGreen,
-          width: 3,
-        ),
-      };
-    } else {
-      _markers = {};
-      _polylines = {};
-    }
     _initLiveData();
   }
 
@@ -113,6 +84,41 @@ class _AmbulanceSyncScreenState extends State<AmbulanceSyncScreen> {
     }
     _mapController?.dispose();
     super.dispose();
+  }
+
+  Set<Marker> _buildMarkers(Trip? trip) {
+    final markers = <Marker>{};
+    if (!AppConfig.enableMaps) return markers;
+
+    // Hospital's own location from HospitalProvider heartbeat
+    final hp = context.read<HospitalProvider>();
+    final hb = hp.heartbeat;
+    if (hb != null && hb.latitude != 0) {
+      markers.add(Marker(
+        markerId: const MarkerId('hospital'),
+        position: LatLng(hb.latitude, hb.longitude),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+        infoWindow: InfoWindow(title: hb.name.isNotEmpty ? hb.name : 'Hospital'),
+      ));
+    }
+
+    // Live ambulance position from WebSocket, or pickup coords as fallback
+    if (_ambulanceLat != null && _ambulanceLng != null) {
+      markers.add(Marker(
+        markerId: const MarkerId('ambulance'),
+        position: LatLng(_ambulanceLat!, _ambulanceLng!),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+        infoWindow: InfoWindow(title: trip?.driverName ?? 'Ambulance'),
+      ));
+    } else if (trip != null) {
+      markers.add(Marker(
+        markerId: const MarkerId('ambulance'),
+        position: LatLng(trip.pickupLatitude, trip.pickupLongitude),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+        infoWindow: InfoWindow(title: trip.driverName ?? 'Ambulance'),
+      ));
+    }
+    return markers;
   }
 
   @override
@@ -169,13 +175,20 @@ class _AmbulanceSyncScreenState extends State<AmbulanceSyncScreen> {
                   borderRadius: AppSpacing.borderRadiusLg,
                   child: AppConfig.enableMaps
                       ? GoogleMap(
-                          initialCameraPosition: MapConfig.syncCamera,
-                          markers: _markers,
-                          polylines: _polylines,
-                          liteModeEnabled: false,
-                          myLocationEnabled: false,
+                          initialCameraPosition: CameraPosition(
+                            target: _ambulanceLat != null
+                                ? LatLng(_ambulanceLat!, _ambulanceLng!)
+                                : (incomingTrip != null
+                                    ? LatLng(incomingTrip.pickupLatitude, incomingTrip.pickupLongitude)
+                                    : const LatLng(12.8456, 77.6603)),
+                            zoom: 14.0,
+                          ),
+                          markers: _buildMarkers(incomingTrip),
+                          myLocationEnabled: true,
+                          myLocationButtonEnabled: false,
                           zoomControlsEnabled: false,
                           mapToolbarEnabled: false,
+                          trafficEnabled: true,
                           onMapCreated: (controller) {
                             _mapController = controller;
                           },
