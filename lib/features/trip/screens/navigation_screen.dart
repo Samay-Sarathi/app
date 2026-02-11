@@ -1,28 +1,26 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_compass/flutter_compass.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_typography.dart';
-import '../../../core/theme/app_spacing.dart';
+import '../../../core/models/trip_status.dart';
 import '../../../core/providers/trip_provider.dart';
 import '../../../core/services/websocket_service.dart';
 import '../../../core/services/directions_service.dart';
 import '../../../core/models/route_info.dart';
 import '../../../core/utils/navigation_helpers.dart';
+import '../../../core/map/custom_markers.dart';
 import '../../../shared/widgets/map/turn_banner.dart';
-import '../../../shared/widgets/map/nav_bottom_panel.dart';
+import '../../../shared/widgets/map/nav_bottom_sheet.dart';
 import '../../../shared/widgets/map/map_action_button.dart';
+import '../../../shared/widgets/map/map_helpers.dart';
 import '../widgets/qr_handoff_sheet.dart';
 
 /// Unified navigation + green corridor screen.
-///
-/// When the driver reaches this screen, the trip automatically transitions
-/// to EN_ROUTE and the green corridor activates — notifying police and
-/// hospitals along the route. No manual "Corridor" button needed.
 class NavigationScreen extends StatefulWidget {
   const NavigationScreen({super.key});
 
@@ -30,10 +28,10 @@ class NavigationScreen extends StatefulWidget {
   State<NavigationScreen> createState() => _NavigationScreenState();
 }
 
-class _NavigationScreenState extends State<NavigationScreen>
-    with SingleTickerProviderStateMixin {
+class _NavigationScreenState extends State<NavigationScreen> {
   GoogleMapController? _mapController;
   StreamSubscription<Position>? _locationSub;
+  StreamSubscription<CompassEvent>? _compassSub;
   String? _subscribedTripTopic;
 
   // Navigation state
@@ -49,36 +47,55 @@ class _NavigationScreenState extends State<NavigationScreen>
   int _remainingDistanceMeters = 0;
   int _remainingDurationSeconds = 0;
 
+  // Custom markers
+  BitmapDescriptor? _hospitalIcon;
+  BitmapDescriptor? _userArrowIcon;
+
   // Green corridor state
-  late AnimationController _pulseController;
-  late Animation<double> _pulseAnimation;
   bool _corridorActive = false;
 
   @override
   void initState() {
     super.initState();
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    )..repeat(reverse: true);
-    _pulseAnimation = Tween<double>(begin: 0.3, end: 1.0).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
+    _loadCustomMarkers();
+    _startCompass();
     _initNavigation();
     _subscribeToTripStatus();
     _autoActivateCorridor();
+  }
+
+  // ── Compass for real-time heading ──
+
+  void _startCompass() {
+    _compassSub = FlutterCompass.events?.listen((event) {
+      if (!mounted || event.heading == null) return;
+      final heading = event.heading!;
+      // Only update if heading changed meaningfully (>2°) to avoid jitter
+      if ((heading - _currentHeading).abs() > 2) {
+        setState(() => _currentHeading = heading);
+        if (_isFollowingUser && _mapController != null && _currentLocation != null) {
+          _mapController!.animateCamera(CameraUpdate.newCameraPosition(
+            CameraPosition(target: _currentLocation!, zoom: 17.5, tilt: 55, bearing: heading),
+          ));
+        }
+      }
+    });
+  }
+
+  Future<void> _loadCustomMarkers() async {
+    _hospitalIcon = await CustomMarkers.hospitalMarker();
+    _userArrowIcon = await CustomMarkers.userArrowMarker();
+    if (mounted) setState(() {});
   }
 
   // ── Auto-activate green corridor ──
 
   Future<void> _autoActivateCorridor() async {
     final tp = context.read<TripProvider>();
-    // Already EN_ROUTE — corridor is active
-    if (tp.activeTrip?.status == 'EN_ROUTE') {
+    if (tp.activeTrip?.status == TripStatus.enRoute) {
       setState(() => _corridorActive = true);
       return;
     }
-    // Trigger EN_ROUTE transition
     final success = await tp.startEnRoute();
     if (mounted && success) {
       setState(() => _corridorActive = true);
@@ -99,19 +116,25 @@ class _NavigationScreenState extends State<NavigationScreen>
     }
 
     final position = await Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+      locationSettings: AndroidSettings(
+        accuracy: LocationAccuracy.bestForNavigation,
+        timeLimit: const Duration(seconds: 10),
+      ),
     );
     _currentLocation = LatLng(position.latitude, position.longitude);
     _currentHeading = position.heading;
 
     final tripProvider = context.read<TripProvider>();
-    final trip = tripProvider.activeTrip;
-    if (trip == null) {
+    var trip = tripProvider.activeTrip;
+
+    // If no trip in memory (app restarted mid-ride), fetch from backend
+    trip ??= await tripProvider.fetchActiveTrip();
+    if (!mounted) return;
+    if (trip == null || !trip.status.isActive) {
       setState(() { _routeLoading = false; _routeError = 'No active trip'; });
       return;
     }
 
-    // Hospital coordinates: handshake > trip > provider cache
     final destination = _getHospitalLocation();
     if (destination == null) {
       setState(() { _routeLoading = false; _routeError = 'No hospital destination'; });
@@ -157,23 +180,34 @@ class _NavigationScreenState extends State<NavigationScreen>
     final ws = context.read<WebSocketService>();
 
     _locationSub = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 5),
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.bestForNavigation, distanceFilter: 10),
     ).listen((position) {
       if (!mounted) return;
+
+      // Skip inaccurate readings (GPS noise)
+      if (position.accuracy > 20) return;
+
+      // Small threshold to filter GPS noise when truly stationary.
+      final rawSpeedKmh = position.speed * 3.6;
+      final isMoving = rawSpeedKmh > 4;
       final newLocation = LatLng(position.latitude, position.longitude);
+
       setState(() {
-        _currentLocation = newLocation;
-        _currentSpeed = position.speed * 3.6;
-        _currentHeading = position.heading;
+        _currentSpeed = isMoving ? rawSpeedKmh : 0;
+        if (isMoving) _currentLocation = newLocation;
       });
-      _updateCurrentStep(newLocation);
-      if (_isFollowingUser && _mapController != null) {
-        _mapController!.animateCamera(CameraUpdate.newCameraPosition(
-          CameraPosition(target: newLocation, zoom: 17.5, tilt: 55, bearing: position.heading)));
+
+      if (isMoving) {
+        _updateCurrentStep(newLocation);
+        if (_isFollowingUser && _mapController != null) {
+          _mapController!.animateCamera(CameraUpdate.newCameraPosition(
+            CameraPosition(target: newLocation, zoom: 17.5, tilt: 55, bearing: _currentHeading)));
+        }
       }
+
       ws.send('/app/trip/${trip.id}/location', {
         'latitude': position.latitude, 'longitude': position.longitude,
-        'heading': position.heading, 'speed': position.speed, 'accuracy': position.accuracy,
+        'heading': _currentHeading, 'speed': position.speed, 'accuracy': position.accuracy,
       });
     });
   }
@@ -218,11 +252,11 @@ class _NavigationScreenState extends State<NavigationScreen>
 
   @override
   void dispose() {
+    _compassSub?.cancel();
     _locationSub?.cancel();
     if (_subscribedTripTopic != null) {
       try { context.read<WebSocketService>().unsubscribe(_subscribedTripTopic!); } catch (_) {}
     }
-    _pulseController.dispose();
     _mapController?.dispose();
     super.dispose();
   }
@@ -247,6 +281,7 @@ class _NavigationScreenState extends State<NavigationScreen>
     final trip = tripProvider.activeTrip;
     final handshake = tripProvider.handshakeResult;
     final hospitalName = handshake?.hospitalName ?? trip?.hospitalName ?? 'Hospital';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Current navigation step
     RouteStep? currentStep;
@@ -258,28 +293,34 @@ class _NavigationScreenState extends State<NavigationScreen>
       }
     }
 
-    // Markers
+    // Markers — use custom markers
     final markers = <Marker>{};
     final hospitalLoc = _getHospitalLocation();
     if (hospitalLoc != null) {
       markers.add(Marker(
         markerId: const MarkerId('hospital'),
         position: hospitalLoc,
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+        icon: _hospitalIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
         infoWindow: InfoWindow(title: hospitalName),
       ));
     }
 
-    // Route polyline
-    final polylines = <Polyline>{};
-    if (_routeInfo != null) {
-      polylines.add(Polyline(
-        polylineId: const PolylineId('route'),
-        points: _routeInfo!.polylinePoints,
-        color: const Color(0xFF4285F4),
-        width: 5,
+    // Driver arrow — rotates with heading like Google Maps navigation
+    if (_currentLocation != null) {
+      markers.add(Marker(
+        markerId: const MarkerId('driver'),
+        position: _currentLocation!,
+        icon: _userArrowIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+        rotation: _currentHeading,
+        flat: true,
+        anchor: const Offset(0.5, 0.5),
       ));
     }
+
+    // Route polyline — enhanced with dark outline
+    final polylines = _routeInfo != null
+        ? MapHelpers.createRoutePolyline(_routeInfo!.polylinePoints)
+        : <Polyline>{};
 
     return Scaffold(
       body: Stack(
@@ -293,13 +334,17 @@ class _NavigationScreenState extends State<NavigationScreen>
               ),
               markers: markers,
               polylines: polylines,
-              myLocationEnabled: true,
+              myLocationEnabled: false,
               myLocationButtonEnabled: false,
               zoomControlsEnabled: false,
               mapToolbarEnabled: false,
               compassEnabled: false,
-              trafficEnabled: true,
-              onMapCreated: (controller) => _mapController = controller,
+              trafficEnabled: false,
+              onMapCreated: (controller) {
+                _mapController = controller;
+                // Apply dark map style
+                MapHelpers.applyMapStyle(controller, isDark);
+              },
             )
           else
             Container(color: AppColors.commandDark),
@@ -315,57 +360,13 @@ class _NavigationScreenState extends State<NavigationScreen>
             ),
           ),
 
-          // ── Green corridor status chip ──
-          if (_corridorActive)
-            Positioned(
-              top: MediaQuery.of(context).padding.top + (currentStep != null ? 110 : 8),
-              left: 0, right: 0,
-              child: Center(
-                child: AnimatedBuilder(
-                  animation: _pulseAnimation,
-                  builder: (context, _) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: AppColors.commandDark.withValues(alpha: 0.85),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: AppColors.lifelineGreen.withValues(alpha: _pulseAnimation.value),
-                          width: 1.5,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 8, height: 8,
-                            decoration: BoxDecoration(
-                              color: AppColors.lifelineGreen.withValues(alpha: _pulseAnimation.value),
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'GREEN CORRIDOR ACTIVE',
-                            style: AppTypography.overline.copyWith(
-                              color: AppColors.lifelineGreen, fontSize: 11, letterSpacing: 1.2,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-
           // ── Recenter FAB ──
           Positioned(
             right: 16, bottom: 260,
             child: FloatingActionButton.small(
               heroTag: 'recenter',
               onPressed: _snapToUser,
-              backgroundColor: Colors.white,
+              backgroundColor: Theme.of(context).colorScheme.surface,
               elevation: 4,
               child: Icon(
                 _isFollowingUser ? Icons.my_location : Icons.location_searching,
@@ -375,40 +376,37 @@ class _NavigationScreenState extends State<NavigationScreen>
             ),
           ),
 
-          // ── Bottom panel ──
-          Positioned(
-            bottom: 0, left: 0, right: 0,
-            child: NavBottomPanel(
-              remainingDurationSeconds: _remainingDurationSeconds,
-              remainingDistanceMeters: _remainingDistanceMeters,
-              currentSpeed: _currentSpeed,
-              destinationName: hospitalName,
-              destinationIcon: Icons.local_hospital,
-              destinationIconColor: _corridorActive ? AppColors.lifelineGreen : AppColors.emergencyRed,
-              actions: [
-                Expanded(child: MapActionButton(
-                  icon: Icons.qr_code_2, label: 'QR Handoff', color: AppColors.calmPurple,
-                  onTap: () => showQrHandoffSheet(context, trip),
-                )),
+          // ── Draggable bottom sheet ──
+          NavBottomSheet(
+            remainingDurationSeconds: _remainingDurationSeconds,
+            remainingDistanceMeters: _remainingDistanceMeters,
+            currentSpeed: _currentSpeed,
+            destinationName: hospitalName,
+            destinationIcon: Icons.local_hospital,
+            destinationIconColor: _corridorActive ? AppColors.lifelineGreen : AppColors.emergencyRed,
+            actions: [
+              Expanded(child: MapActionButton(
+                icon: Icons.qr_code_2, label: 'QR Handoff', color: AppColors.calmPurple,
+                onTap: () => showQrHandoffSheet(context, trip),
+              )),
+              const SizedBox(width: 10),
+              Expanded(child: MapActionButton(
+                icon: Icons.flag, label: 'End Trip', color: AppColors.warmOrange,
+                onTap: () => context.go('/driver/triage'),
+              )),
+              if (AppConfig.devMode) ...[
                 const SizedBox(width: 10),
                 Expanded(child: MapActionButton(
-                  icon: Icons.flag, label: 'End Trip', color: AppColors.warmOrange,
-                  onTap: () => context.go('/driver/triage'),
+                  icon: Icons.bug_report, label: '[DEV] Cancel', color: AppColors.warmOrange,
+                  onTap: () async {
+                    final tp = context.read<TripProvider>();
+                    final nav = GoRouter.of(context);
+                    await tp.cancelTrip(reason: 'DEV: Manual cancel');
+                    if (context.mounted) nav.go('/driver/dashboard');
+                  },
                 )),
-                if (AppConfig.devMode) ...[
-                  const SizedBox(width: 10),
-                  Expanded(child: MapActionButton(
-                    icon: Icons.bug_report, label: '[DEV] Cancel', color: AppColors.warmOrange,
-                    onTap: () async {
-                      final tp = context.read<TripProvider>();
-                      final nav = GoRouter.of(context);
-                      await tp.cancelTrip(reason: 'DEV: Manual cancel');
-                      if (context.mounted) nav.go('/driver/dashboard');
-                    },
-                  )),
-                ],
               ],
-            ),
+            ],
           ),
         ],
       ),

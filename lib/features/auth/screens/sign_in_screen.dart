@@ -95,21 +95,6 @@ class _SignInScreenState extends State<SignInScreen>
     }
   }
 
-  String get _dashboardRoute {
-    switch (widget.role) {
-      case 'driver':
-        return '/driver/dashboard';
-      case 'police':
-        return '/police/dashboard';
-      case 'hospital':
-        return '/hospital/capacity';
-      case 'admin':
-        return '/admin/dashboard';
-      default:
-        return '/driver/dashboard';
-    }
-  }
-
   bool get _isAdmin => widget.role == 'admin';
 
   /// Dev phone number (without +91 prefix) for quick-fill.

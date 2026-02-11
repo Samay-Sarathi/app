@@ -10,9 +10,9 @@ import '../../../shared/widgets/setting_item.dart';
 import '../../../shared/widgets/logout_button.dart';
 import '../../../shared/widgets/status_badge.dart';
 
-/// Hospital Settings tab — uses shared ProfileCard, SettingItem, LogoutButton.
-class HospitalSettingsTab extends StatelessWidget {
-  const HospitalSettingsTab({super.key});
+/// Police Settings tab — uses shared components.
+class PoliceSettingsTab extends StatelessWidget {
+  const PoliceSettingsTab({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +27,7 @@ class HospitalSettingsTab extends StatelessWidget {
             roleIcon: Icons.settings,
             roleColor: AppColors.mediumGray,
             roleTitle: 'Settings',
-            userName: auth.fullName.isNotEmpty ? auth.fullName : 'Hospital Staff',
+            userName: auth.fullName.isNotEmpty ? auth.fullName : 'Traffic Officer',
             badgeStatus: BadgeStatus.active,
             badgeLabel: 'ONLINE',
           ),
@@ -36,10 +36,10 @@ class HospitalSettingsTab extends StatelessWidget {
             child: ListView(
               children: [
                 ProfileCard(
-                  icon: Icons.local_hospital,
-                  iconColor: AppColors.hospitalTeal,
-                  name: auth.fullName.isNotEmpty ? auth.fullName : 'Hospital Staff',
-                  subtitle: 'Emergency Department',
+                  icon: Icons.shield,
+                  iconColor: AppColors.calmPurple,
+                  name: auth.fullName.isNotEmpty ? auth.fullName : 'Traffic Officer',
+                  subtitle: 'Traffic Police Department',
                 ),
                 const SizedBox(height: 24),
                 Text('ACCOUNT', style: AppTypography.overline.copyWith(color: AppColors.mediumGray, letterSpacing: 1.5)),

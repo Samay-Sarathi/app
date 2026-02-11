@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
@@ -141,13 +142,13 @@ class _QrScanScreenState extends State<QrScanScreen> {
                     width: double.infinity,
                     height: 52,
                     child: ElevatedButton(
-                      onPressed: () => Navigator.of(context).pop(),
+                      onPressed: () => context.go('/paramedic/dashboard'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.lifelineGreen,
                         foregroundColor: AppColors.white,
                         shape: RoundedRectangleBorder(borderRadius: AppSpacing.borderRadiusMd),
                       ),
-                      child: const Text('Done', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                      child: const Text('View Trip', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                     ),
                   ),
                 ],
@@ -168,7 +169,7 @@ class _QrScanScreenState extends State<QrScanScreen> {
               child: Row(
                 children: [
                   GestureDetector(
-                    onTap: () => Navigator.of(context).pop(),
+                    onTap: () => context.go('/paramedic/dashboard'),
                     child: Row(
                       children: [
                         Icon(Icons.arrow_back, color: onSurface),

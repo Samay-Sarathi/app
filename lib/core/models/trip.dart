@@ -93,7 +93,8 @@ class Trip {
     return DateTime.parse(value as String);
   }
 
-  Trip copyWith({TripStatus? status, String? hospitalId, String? hospitalName}) {
+  Trip copyWith({TripStatus? status, String? hospitalId, String? hospitalName,
+      double? hospitalLatitude, double? hospitalLongitude}) {
     return Trip(
       id: id,
       driverId: driverId,
@@ -116,6 +117,8 @@ class Trip {
       driverName: driverName,
       paramedicName: paramedicName,
       hospitalName: hospitalName ?? this.hospitalName,
+      hospitalLatitude: hospitalLatitude ?? this.hospitalLatitude,
+      hospitalLongitude: hospitalLongitude ?? this.hospitalLongitude,
     );
   }
 }

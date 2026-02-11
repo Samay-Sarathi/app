@@ -10,9 +10,9 @@ import '../../../shared/widgets/setting_item.dart';
 import '../../../shared/widgets/logout_button.dart';
 import '../../../shared/widgets/status_badge.dart';
 
-/// Hospital Settings tab — uses shared ProfileCard, SettingItem, LogoutButton.
-class HospitalSettingsTab extends StatelessWidget {
-  const HospitalSettingsTab({super.key});
+/// Paramedic Settings tab — uses shared components.
+class ParamedicSettingsTab extends StatelessWidget {
+  const ParamedicSettingsTab({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +27,7 @@ class HospitalSettingsTab extends StatelessWidget {
             roleIcon: Icons.settings,
             roleColor: AppColors.mediumGray,
             roleTitle: 'Settings',
-            userName: auth.fullName.isNotEmpty ? auth.fullName : 'Hospital Staff',
+            userName: auth.fullName.isNotEmpty ? auth.fullName : 'Paramedic',
             badgeStatus: BadgeStatus.active,
             badgeLabel: 'ONLINE',
           ),
@@ -36,10 +36,10 @@ class HospitalSettingsTab extends StatelessWidget {
             child: ListView(
               children: [
                 ProfileCard(
-                  icon: Icons.local_hospital,
+                  icon: Icons.medical_services,
                   iconColor: AppColors.hospitalTeal,
-                  name: auth.fullName.isNotEmpty ? auth.fullName : 'Hospital Staff',
-                  subtitle: 'Emergency Department',
+                  name: auth.fullName.isNotEmpty ? auth.fullName : 'Paramedic',
+                  subtitle: 'Paramedic',
                 ),
                 const SizedBox(height: 24),
                 Text('ACCOUNT', style: AppTypography.overline.copyWith(color: AppColors.mediumGray, letterSpacing: 1.5)),
@@ -47,7 +47,7 @@ class HospitalSettingsTab extends StatelessWidget {
                 const SettingItem(icon: Icons.info_outline, label: 'About LifeLine', subtitle: 'Version 1.0.0'),
                 const SettingItem(icon: Icons.description_outlined, label: 'Terms of Service', subtitle: 'View legal information'),
                 const SizedBox(height: 24),
-                const LogoutButton(),
+                const LogoutButton(clearTrip: true),
               ],
             ),
           ),

@@ -46,7 +46,7 @@ class RoleSelectionScreen extends StatelessWidget {
                   crossAxisCount: 2,
                   mainAxisSpacing: 16,
                   crossAxisSpacing: 16,
-                  childAspectRatio: 1.25,
+                  childAspectRatio: 1.2,
                   children: [
                     _RoleCard(
                       icon: Icons.local_shipping,
@@ -55,16 +55,22 @@ class RoleSelectionScreen extends StatelessWidget {
                       onTap: () => context.go('/sign-in', extra: 'driver'),
                     ),
                     _RoleCard(
-                      icon: Icons.shield,
-                      label: 'Traffic\nPolice',
-                      color: AppColors.calmPurple,
-                      onTap: () => context.go('/sign-in', extra: 'police'),
+                      icon: Icons.medical_services,
+                      label: 'Paramedic',
+                      color: AppColors.hospitalTeal,
+                      onTap: () => context.go('/sign-in', extra: 'paramedic'),
                     ),
                     _RoleCard(
                       icon: Icons.local_hospital,
                       label: 'Hospital',
-                      color: AppColors.hospitalTeal,
+                      color: AppColors.lifelineGreen,
                       onTap: () => context.go('/sign-in', extra: 'hospital'),
+                    ),
+                    _RoleCard(
+                      icon: Icons.shield,
+                      label: 'Traffic\nPolice',
+                      color: AppColors.calmPurple,
+                      onTap: () => context.go('/sign-in', extra: 'police'),
                     ),
                     _RoleCard(
                       icon: Icons.admin_panel_settings,

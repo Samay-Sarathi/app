@@ -2,12 +2,12 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../models/route_info.dart';
+import '../config/app_config.dart';
 import '../utils/polyline_decoder.dart';
 
 /// Fetches route directions from Google Directions API.
 class DirectionsService {
-  // DEV_ONLY: Hardcoded API key — move to secure config for production.
-  static const String _apiKey = 'AIzaSyDzHb1NgOgvFx57hrthDDicKpAw03XY_V4';
+  static const String _apiKey = AppConfig.googleMapsApiKey;
   static const String _baseUrl = 'https://maps.googleapis.com/maps/api/directions/json';
 
   final Dio _dio;

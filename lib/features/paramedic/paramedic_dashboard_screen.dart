@@ -2,19 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/providers/trip_provider.dart';
 import '../../shared/widgets/bottom_nav.dart';
-import 'tabs/driver_status_tab.dart';
-import 'tabs/driver_map_tab.dart';
-import 'tabs/driver_alerts_tab.dart';
-import 'tabs/driver_settings_tab.dart';
+import 'tabs/paramedic_trip_tab.dart';
+import 'tabs/paramedic_vitals_tab.dart';
+import 'tabs/paramedic_settings_tab.dart';
 
-class DriverDashboardScreen extends StatefulWidget {
-  const DriverDashboardScreen({super.key});
+class ParamedicDashboardScreen extends StatefulWidget {
+  const ParamedicDashboardScreen({super.key});
 
   @override
-  State<DriverDashboardScreen> createState() => _DriverDashboardScreenState();
+  State<ParamedicDashboardScreen> createState() => _ParamedicDashboardScreenState();
 }
 
-class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
+class _ParamedicDashboardScreenState extends State<ParamedicDashboardScreen> {
   int _navIndex = 0;
 
   @override
@@ -32,10 +31,9 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
         child: IndexedStack(
           index: _navIndex,
           children: const [
-            DriverStatusTab(),
-            DriverMapTab(),
-            DriverSettingsTab(),
-            DriverAlertsTab(),
+            ParamedicTripTab(),
+            ParamedicVitalsTab(),
+            ParamedicSettingsTab(),
           ],
         ),
       ),
@@ -43,10 +41,9 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
         currentIndex: _navIndex,
         onTap: (i) => setState(() => _navIndex = i),
         items: const [
-          LifelineNavItem(icon: Icons.shield, label: 'Status'),
-          LifelineNavItem(icon: Icons.map, label: 'Map'),
+          LifelineNavItem(icon: Icons.local_shipping, label: 'Trip'),
+          LifelineNavItem(icon: Icons.monitor_heart, label: 'Vitals'),
           LifelineNavItem(icon: Icons.settings, label: 'Settings'),
-          LifelineNavItem(icon: Icons.notifications, label: 'Alerts'),
         ],
       ),
     );

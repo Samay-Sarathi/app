@@ -83,7 +83,9 @@ class _TriageSyncScreenState extends State<TriageSyncScreen> {
   }
 
   void _finishAndGoHome() {
-    context.read<TripProvider>().clearTrip();
+    // Don't clearTrip() — the trip is still ARRIVED on the backend.
+    // Hospital-side completes it via POST /trips/{id}/complete.
+    // Dashboard will re-fetch and show the active trip until then.
     context.go('/driver/dashboard');
   }
 

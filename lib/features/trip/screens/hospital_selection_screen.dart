@@ -10,6 +10,7 @@ import '../../../core/providers/trip_provider.dart';
 import '../../../core/models/hospital_recommendation.dart';
 import '../../../shared/widgets/buttons.dart';
 import '../../../shared/widgets/map_placeholder.dart';
+import '../../../shared/widgets/map/map_helpers.dart';
 
 class HospitalSelectionScreen extends StatefulWidget {
   const HospitalSelectionScreen({super.key});
@@ -232,6 +233,8 @@ class _HospitalSelectionScreenState extends State<HospitalSelectionScreen> {
                     mapToolbarEnabled: false,
                     onMapCreated: (controller) {
                       _mapController = controller;
+                      final isDark = Theme.of(context).brightness == Brightness.dark;
+                      MapHelpers.applyMapStyle(controller, isDark);
                     },
                   )
                 : MapPlaceholder.hospitalSelect(),

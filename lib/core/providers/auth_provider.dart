@@ -49,7 +49,7 @@ class AuthProvider extends ChangeNotifier {
       case UserRole.admin:
         return '/admin/dashboard';
       case UserRole.paramedic:
-        return '/driver/dashboard'; // TODO: paramedic view
+        return '/paramedic/dashboard';
       case null:
         return '/roles';
     }

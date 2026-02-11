@@ -1,4 +1,8 @@
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../core/providers/auth_provider.dart';
+import '../core/models/user_role.dart';
 import '../features/splash/splash_screen.dart';
 import '../features/auth/screens/role_selection_screen.dart';
 import '../features/auth/screens/sign_in_screen.dart';
@@ -10,15 +14,48 @@ import '../features/trip/screens/hospital_selection_screen.dart';
 import '../features/trip/screens/navigation_screen.dart';
 import '../features/trip/screens/triage_sync_screen.dart';
 import '../features/hospital/screens/emergency_alert_screen.dart';
+import '../features/paramedic/paramedic_dashboard_screen.dart';
 import '../features/paramedic/screens/qr_scan_screen.dart';
 import '../features/hospital/screens/ambulance_sync_screen.dart';
 import '../features/hospital/hospital_dashboard_screen.dart';
 import '../features/admin/admin_dashboard_screen.dart';
 import '../features/police/police_dashboard_screen.dart';
 
+/// Routes that don't require authentication.
+const _publicPaths = {'/', '/roles', '/sign-in', '/register'};
+
+/// Allowed route prefixes per role.
+const _roleRoutes = <UserRole, List<String>>{
+  UserRole.driver: ['/driver/'],
+  UserRole.hospital: ['/hospital/'],
+  UserRole.police: ['/police/'],
+  UserRole.admin: ['/admin/'],
+  UserRole.paramedic: ['/paramedic/', '/driver/'],
+};
+
 class AppRouter {
   static final GoRouter router = GoRouter(
     initialLocation: '/',
+    redirect: (BuildContext context, GoRouterState state) {
+      final auth = context.read<AuthProvider>();
+      final path = state.uri.path;
+
+      // Public routes — always accessible
+      if (_publicPaths.contains(path)) return null;
+
+      // Not authenticated — bounce to role selection
+      if (!auth.isAuthenticated) return '/roles';
+
+      // Authenticated — check role access
+      final role = auth.role;
+      if (role == null) return '/roles';
+
+      final allowed = _roleRoutes[role] ?? [];
+      final hasAccess = allowed.any((prefix) => path.startsWith(prefix));
+      if (!hasAccess) return auth.dashboardRoute;
+
+      return null; // allow
+    },
     routes: [
       GoRoute(
         path: '/',
@@ -110,6 +147,10 @@ class AppRouter {
       ),
 
       // Paramedic routes
+      GoRoute(
+        path: '/paramedic/dashboard',
+        builder: (context, state) => const ParamedicDashboardScreen(),
+      ),
       GoRoute(
         path: '/paramedic/qr-scan',
         builder: (context, state) => const QrScanScreen(),

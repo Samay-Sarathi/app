@@ -11,7 +11,9 @@ import '../../../core/services/websocket_service.dart';
 import '../../../core/services/triage_service.dart';
 import '../../../core/models/triage_data.dart';
 import '../../../core/models/trip.dart';
+import '../../../core/map/custom_markers.dart';
 import '../../../shared/widgets/map_placeholder.dart';
+import '../../../shared/widgets/map/map_helpers.dart';
 import '../../../shared/widgets/buttons.dart';
 import '../../../shared/widgets/status_badge.dart';
 
@@ -33,10 +35,21 @@ class _AmbulanceSyncScreenState extends State<AmbulanceSyncScreen> {
   double? _ambulanceLat;
   double? _ambulanceLng;
 
+  // Custom markers
+  BitmapDescriptor? _hospitalIcon;
+  BitmapDescriptor? _ambulanceIcon;
+
   @override
   void initState() {
     super.initState();
+    _loadMarkers();
     _initLiveData();
+  }
+
+  Future<void> _loadMarkers() async {
+    _hospitalIcon = await CustomMarkers.hospitalMarker();
+    _ambulanceIcon = await CustomMarkers.ambulanceMarker();
+    if (mounted) setState(() {});
   }
 
   Future<void> _initLiveData() async {
@@ -46,13 +59,11 @@ class _AmbulanceSyncScreenState extends State<AmbulanceSyncScreen> {
 
     final tripId = incomingTrip.id;
 
-    // Fetch latest vitals via REST
     try {
       _latestVitals = await _triageService.getLatestVitals(tripId);
       if (mounted) setState(() {});
     } catch (_) {}
 
-    // Subscribe to live vitals via WebSocket
     final ws = context.read<WebSocketService>();
     _vitalsTopic = '/topic/trip/$tripId/vitals';
     ws.subscribe(_vitalsTopic!, (data) {
@@ -62,7 +73,6 @@ class _AmbulanceSyncScreenState extends State<AmbulanceSyncScreen> {
       });
     });
 
-    // Subscribe to live location via WebSocket
     _locationTopic = '/topic/trip/$tripId/location';
     ws.subscribe(_locationTopic!, (data) {
       if (!mounted) return;
@@ -90,31 +100,29 @@ class _AmbulanceSyncScreenState extends State<AmbulanceSyncScreen> {
     final markers = <Marker>{};
     if (!AppConfig.enableMaps) return markers;
 
-    // Hospital's own location from HospitalProvider heartbeat
     final hp = context.read<HospitalProvider>();
     final hb = hp.heartbeat;
     if (hb != null && hb.latitude != 0) {
       markers.add(Marker(
         markerId: const MarkerId('hospital'),
         position: LatLng(hb.latitude, hb.longitude),
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+        icon: _hospitalIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
         infoWindow: InfoWindow(title: hb.name.isNotEmpty ? hb.name : 'Hospital'),
       ));
     }
 
-    // Live ambulance position from WebSocket, or pickup coords as fallback
     if (_ambulanceLat != null && _ambulanceLng != null) {
       markers.add(Marker(
         markerId: const MarkerId('ambulance'),
         position: LatLng(_ambulanceLat!, _ambulanceLng!),
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+        icon: _ambulanceIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
         infoWindow: InfoWindow(title: trip?.driverName ?? 'Ambulance'),
       ));
     } else if (trip != null) {
       markers.add(Marker(
         markerId: const MarkerId('ambulance'),
         position: LatLng(trip.pickupLatitude, trip.pickupLongitude),
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+        icon: _ambulanceIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
         infoWindow: InfoWindow(title: trip.driverName ?? 'Ambulance'),
       ));
     }
@@ -126,6 +134,7 @@ class _AmbulanceSyncScreenState extends State<AmbulanceSyncScreen> {
     final theme = Theme.of(context);
     final onSurface = theme.colorScheme.onSurface;
     final cardColor = theme.colorScheme.surface;
+    final isDark = theme.brightness == Brightness.dark;
     final hp = context.watch<HospitalProvider>();
     final incomingTrip = hp.incomingTrips.isNotEmpty ? hp.incomingTrips.first : null;
     final etaMin = incomingTrip?.etaSeconds != null
@@ -153,10 +162,7 @@ class _AmbulanceSyncScreenState extends State<AmbulanceSyncScreen> {
                   const SizedBox(width: 8),
                   Text(
                     'ETA: $etaMin MINS',
-                    style: AppTypography.bodyS.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.emergencyRed,
-                    ),
+                    style: AppTypography.bodyS.copyWith(fontWeight: FontWeight.w700, color: AppColors.emergencyRed),
                   ),
                 ],
               ),
@@ -167,9 +173,9 @@ class _AmbulanceSyncScreenState extends State<AmbulanceSyncScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Map
+              // Map — enlarged from 160px to 220px
               SizedBox(
-                height: 160,
+                height: 220,
                 width: double.infinity,
                 child: ClipRRect(
                   borderRadius: AppSpacing.borderRadiusLg,
@@ -191,6 +197,7 @@ class _AmbulanceSyncScreenState extends State<AmbulanceSyncScreen> {
                           trafficEnabled: true,
                           onMapCreated: (controller) {
                             _mapController = controller;
+                            MapHelpers.applyMapStyle(controller, isDark);
                           },
                         )
                       : MapPlaceholder.ambulanceSync(),
@@ -245,10 +252,7 @@ class _AmbulanceSyncScreenState extends State<AmbulanceSyncScreen> {
               // Live vitals
               Container(
                 padding: const EdgeInsets.all(AppSpacing.spaceMd),
-                decoration: BoxDecoration(
-                  color: cardColor,
-                  borderRadius: AppSpacing.borderRadiusLg,
-                ),
+                decoration: BoxDecoration(color: cardColor, borderRadius: AppSpacing.borderRadiusLg),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -256,10 +260,7 @@ class _AmbulanceSyncScreenState extends State<AmbulanceSyncScreen> {
                       children: [
                         const Icon(Icons.favorite, size: 18, color: AppColors.emergencyRed),
                         const SizedBox(width: 8),
-                        Text(
-                          'LIVE VITALS',
-                          style: AppTypography.overline.copyWith(color: onSurface),
-                        ),
+                        Text('LIVE VITALS', style: AppTypography.overline.copyWith(color: onSurface)),
                         const Spacer(),
                         const StatusBadge(status: BadgeStatus.active, label: 'LIVE'),
                       ],
@@ -337,7 +338,6 @@ class _AmbulanceSyncScreenState extends State<AmbulanceSyncScreen> {
                 icon: Icons.check,
                 onPressed: () async {
                   if (incomingTrip != null) {
-                    // Confirm arrival then complete
                     await hp.confirmArrival(incomingTrip.id);
                     if (context.mounted) {
                       await hp.completeTrip(incomingTrip.id);
@@ -366,10 +366,7 @@ class _VitalItem extends StatelessWidget {
       children: [
         Text(label, style: AppTypography.caption.copyWith(color: AppColors.mediumGray)),
         const SizedBox(height: 4),
-        Text(
-          value,
-          style: AppTypography.vitalM.copyWith(color: color, fontSize: 20),
-        ),
+        Text(value, style: AppTypography.vitalM.copyWith(color: color, fontSize: 20)),
       ],
     );
   }

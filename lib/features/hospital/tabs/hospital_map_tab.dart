@@ -7,10 +7,14 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/providers/hospital_provider.dart';
 import '../../../core/models/trip.dart';
+import '../../../core/map/custom_markers.dart';
 import '../../../shared/widgets/map_placeholder.dart';
+import '../../../shared/widgets/map/map_helpers.dart';
+import '../../../shared/widgets/dashboard_header.dart';
+import '../../../shared/widgets/status_badge.dart';
 import '../widgets/hospital_shared_widgets.dart';
 
-/// Hospital Map tab — live ambulance tracking with real incoming trip data.
+/// Hospital Map tab — live ambulance tracking with custom markers.
 class HospitalMapTab extends StatefulWidget {
   const HospitalMapTab({super.key});
 
@@ -20,13 +24,22 @@ class HospitalMapTab extends StatefulWidget {
 
 class _HospitalMapTabState extends State<HospitalMapTab> {
   GoogleMapController? _mapController;
+  BitmapDescriptor? _hospitalIcon;
+  BitmapDescriptor? _ambulanceIcon;
 
   @override
   void initState() {
     super.initState();
+    _loadMarkers();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<HospitalProvider>().fetchIncomingTrips();
     });
+  }
+
+  Future<void> _loadMarkers() async {
+    _hospitalIcon = await CustomMarkers.hospitalMarker();
+    _ambulanceIcon = await CustomMarkers.ambulanceMarker();
+    if (mounted) setState(() {});
   }
 
   @override
@@ -38,21 +51,20 @@ class _HospitalMapTabState extends State<HospitalMapTab> {
   LatLng _hospitalCenter(HospitalProvider hp) {
     final hb = hp.heartbeat;
     if (hb != null && hb.latitude != 0) return LatLng(hb.latitude, hb.longitude);
-    return const LatLng(12.8456, 77.6603); // fallback
+    return const LatLng(12.8456, 77.6603);
   }
 
   Set<Marker> _buildMarkers(List<Trip> trips) {
     final markers = <Marker>{};
     if (!AppConfig.enableMaps) return markers;
 
-    // Hospital's own location from heartbeat
     final hp = context.read<HospitalProvider>();
     final hb = hp.heartbeat;
     if (hb != null && hb.latitude != 0) {
       markers.add(Marker(
         markerId: const MarkerId('hospital'),
         position: LatLng(hb.latitude, hb.longitude),
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+        icon: _hospitalIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
         infoWindow: InfoWindow(title: hb.name.isNotEmpty ? hb.name : 'Hospital'),
       ));
     }
@@ -61,7 +73,7 @@ class _HospitalMapTabState extends State<HospitalMapTab> {
       markers.add(Marker(
         markerId: MarkerId(trip.id),
         position: LatLng(trip.pickupLatitude, trip.pickupLongitude),
-        icon: BitmapDescriptor.defaultMarkerWithHue(
+        icon: _ambulanceIcon ?? BitmapDescriptor.defaultMarkerWithHue(
           trip.severity >= 7 ? BitmapDescriptor.hueRed : BitmapDescriptor.hueOrange,
         ),
         infoWindow: InfoWindow(
@@ -75,48 +87,29 @@ class _HospitalMapTabState extends State<HospitalMapTab> {
 
   @override
   Widget build(BuildContext context) {
-    final onSurface = Theme.of(context).colorScheme.onSurface;
     final hp = context.watch<HospitalProvider>();
     final trips = hp.incomingTrips;
     final markers = _buildMarkers(trips);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.spaceMd),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.local_shipping, size: 24, color: AppColors.emergencyRed),
-                  const SizedBox(width: 8),
-                  Text('Ambulance Tracking', style: AppTypography.heading2.copyWith(color: onSurface)),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.lifelineGreen.withValues(alpha: 0.1),
-                  borderRadius: AppSpacing.borderRadiusFull,
-                ),
-                child: Row(
-                  children: [
-                    Container(width: 6, height: 6, decoration: const BoxDecoration(color: AppColors.lifelineGreen, shape: BoxShape.circle)),
-                    const SizedBox(width: 6),
-                    Text('LIVE', style: AppTypography.overline.copyWith(color: AppColors.lifelineGreen, fontSize: 10)),
-                  ],
-                ),
-              ),
-            ],
+          DashboardHeader(
+            roleIcon: Icons.local_shipping,
+            roleColor: AppColors.emergencyRed,
+            roleTitle: 'Ambulance Tracking',
+            userName: '${trips.length} incoming',
+            badgeStatus: BadgeStatus.active,
+            badgeLabel: 'LIVE',
           ),
           const SizedBox(height: 16),
 
-          // Map
-          SizedBox(
-            height: 250,
+          // Map — enlarged from 250px
+          Expanded(
+            flex: 3,
             child: ClipRRect(
               borderRadius: AppSpacing.borderRadiusLg,
               child: AppConfig.enableMaps
@@ -131,7 +124,10 @@ class _HospitalMapTabState extends State<HospitalMapTab> {
                       zoomControlsEnabled: false,
                       mapToolbarEnabled: false,
                       trafficEnabled: true,
-                      onMapCreated: (controller) => _mapController = controller,
+                      onMapCreated: (controller) {
+                        _mapController = controller;
+                        MapHelpers.applyMapStyle(controller, isDark);
+                      },
                     )
                   : MapPlaceholder.overview(),
             ),
@@ -141,7 +137,7 @@ class _HospitalMapTabState extends State<HospitalMapTab> {
           // Ambulance list header
           Row(
             children: [
-              Text('Incoming Ambulances', style: AppTypography.bodyL.copyWith(color: onSurface, fontWeight: FontWeight.w600)),
+              Text('Incoming Ambulances', style: AppTypography.bodyL.copyWith(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w600)),
               const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -158,6 +154,7 @@ class _HospitalMapTabState extends State<HospitalMapTab> {
 
           // Ambulance cards
           Expanded(
+            flex: 2,
             child: trips.isEmpty
                 ? Center(
                     child: Column(
@@ -171,7 +168,7 @@ class _HospitalMapTabState extends State<HospitalMapTab> {
                   )
                 : ListView.separated(
                     itemCount: trips.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    separatorBuilder: (_, _) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
                       final trip = trips[index];
                       final etaMin = trip.etaSeconds != null ? (trip.etaSeconds! / 60).ceil() : 0;

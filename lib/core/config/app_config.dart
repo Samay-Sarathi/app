@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 /// Global configuration for the LifeLine app.
 class AppConfig {
   AppConfig._();
@@ -5,20 +7,23 @@ class AppConfig {
   // ── DEV_ONLY: Set to false for production builds ──
   static const bool devMode = true;
 
-  /// Backend API base URL.
-  /// - iOS physical device: use Mac's LAN IP (no adb reverse on iOS)
-  /// - Android physical device: use localhost + `adb reverse tcp:8080 tcp:8080`
-  /// - Android emulator: use http://10.0.2.2:8080/api/v1
-  /// - Production: use https://api.lifeline.app/api/v1
-  static const String baseUrl =
-      'http://192.168.15.90:8080/api/v1'; // iOS physical device via LAN
-  // static const String baseUrl = 'http://localhost:8080/api/v1'; // Android physical device via adb reverse
-  // static const String baseUrl = 'http://10.0.2.2:8080/api/v1'; // Android emulator → localhost
-  // static const String baseUrl = 'https://api.lifeline.app/api/v1'; // Production
+  /// iOS: LAN IP (no adb reverse on iOS)
+  /// Android: localhost via `adb reverse tcp:8080 tcp:8080`
+  /// Production: https://api.lifeline.app/api/v1
+  static final String baseUrl = devMode
+      ? (Platform.isAndroid
+          ? 'http://localhost:8080/api/v1'
+          : 'http://192.168.15.90:8080/api/v1')
+      : 'https://api.lifeline.app/api/v1';
 
   /// Master switch for Google Maps.
   /// Set to `true` once a real API key is in place.
   static const bool enableMaps = true;
+
+  /// Google Maps Directions API key.
+  /// DEV_ONLY: Move to dart-define or a secrets manager for production.
+  static const String googleMapsApiKey =
+      String.fromEnvironment('GOOGLE_MAPS_API_KEY', defaultValue: 'AIzaSyDzHb1NgOgvFx57hrthDDicKpAw03XY_V4');
 
   /// Request timeout in seconds.
   static const int connectTimeout = 10;
