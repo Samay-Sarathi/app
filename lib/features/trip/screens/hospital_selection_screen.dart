@@ -77,7 +77,7 @@ class _HospitalSelectionScreenState extends State<HospitalSelectionScreen> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: AppSpacing.borderRadiusLg),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
             const Icon(Icons.local_hospital, color: AppColors.emergencyRed),
@@ -136,7 +136,7 @@ class _HospitalSelectionScreenState extends State<HospitalSelectionScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.lifelineGreen,
               foregroundColor: AppColors.white,
-              shape: RoundedRectangleBorder(borderRadius: AppSpacing.borderRadiusSm),
+              shape: const StadiumBorder(),
             ),
             onPressed: () => Navigator.of(ctx).pop(true),
             child: const Text('Confirm & Navigate'),

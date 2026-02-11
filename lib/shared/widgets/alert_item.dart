@@ -52,12 +52,15 @@ class AlertItem extends StatelessWidget {
     final cardColor = Theme.of(context).colorScheme.surface;
     final onSurface = Theme.of(context).colorScheme.onSurface;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(AppSpacing.spaceMd),
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius: AppSpacing.borderRadiusMd,
-        border: Border(left: BorderSide(color: _color, width: 3)),
+        borderRadius: AppSpacing.borderRadiusCard,
+        border: Border(left: BorderSide(color: _color, width: 2.5)),
+        boxShadow: isDark ? AppSpacing.shadowSmDark : AppSpacing.shadowSm,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,

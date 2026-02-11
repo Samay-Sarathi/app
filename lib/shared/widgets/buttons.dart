@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_spacing.dart';
 import '../../core/providers/settings_provider.dart';
 
 void _haptic(BuildContext context, {bool heavy = false}) {
@@ -39,8 +38,9 @@ class PrimaryButton extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.lifelineGreen,
           foregroundColor: AppColors.white,
+          elevation: 0,
           disabledBackgroundColor: AppColors.lifelineGreen.withValues(alpha: 0.4),
-          shape: RoundedRectangleBorder(borderRadius: AppSpacing.borderRadiusMd),
+          shape: const StadiumBorder(),
         ),
         child: isLoading
             ? const SizedBox(
@@ -123,11 +123,11 @@ class _EmergencyButtonState extends State<EmergencyButton>
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.emergencyRed,
                 foregroundColor: AppColors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: AppSpacing.borderRadiusMd,
-                  side: BorderSide(color: AppColors.white.withValues(alpha: 0.5), width: 2),
+                shape: StadiumBorder(
+                  side: BorderSide(color: AppColors.emergencyRed.withValues(alpha: 0.3), width: 1.5),
                 ),
-                elevation: 4,
+                elevation: 0,
+                shadowColor: AppColors.emergencyRed.withValues(alpha: 0.4),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -176,8 +176,8 @@ class GhostButton extends StatelessWidget {
         },
         style: OutlinedButton.styleFrom(
           foregroundColor: foreground,
-          side: BorderSide(color: foreground.withValues(alpha: 0.25)),
-          shape: RoundedRectangleBorder(borderRadius: AppSpacing.borderRadiusMd),
+          side: BorderSide(color: foreground.withValues(alpha: 0.15)),
+          shape: const StadiumBorder(),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,

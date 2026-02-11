@@ -16,7 +16,7 @@ class StatusBadge extends StatelessWidget {
     final config = _getConfig(isDark);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
       decoration: BoxDecoration(
         color: config.background,
         borderRadius: AppSpacing.borderRadiusFull,

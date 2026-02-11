@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/models/incident_type.dart';
 
-class EmergencyCaseScreen extends StatelessWidget {
+class EmergencyCaseScreen extends StatefulWidget {
   const EmergencyCaseScreen({super.key});
+
+  @override
+  State<EmergencyCaseScreen> createState() => _EmergencyCaseScreenState();
+}
+
+class _EmergencyCaseScreenState extends State<EmergencyCaseScreen> {
+  static const _prefsKey = 'recent_incident_types';
 
   static const _cases = [
     _CaseType(icon: Icons.favorite, label: 'Heart\nAttack', color: AppColors.emergencyRed, incidentType: IncidentType.cardiac),
@@ -15,14 +23,59 @@ class EmergencyCaseScreen extends StatelessWidget {
     _CaseType(icon: Icons.pregnant_woman, label: 'Pregnancy\nEmergency', color: AppColors.calmPurple, incidentType: IncidentType.obstetric),
     _CaseType(icon: Icons.psychology, label: 'Stroke', color: AppColors.emergencyRed, incidentType: IncidentType.stroke),
     _CaseType(icon: Icons.air, label: 'Breathing\nIssue', color: AppColors.medicalBlue, incidentType: IncidentType.respiratory),
-    _CaseType(icon: Icons.accessibility_new, label: 'Fracture /\nTrauma', color: AppColors.hospitalTeal, incidentType: IncidentType.pediatric),
+    _CaseType(icon: Icons.child_care, label: 'Pediatric\nEmergency', color: AppColors.hospitalTeal, incidentType: IncidentType.pediatric),
     _CaseType(icon: Icons.more_horiz, label: 'Other', color: AppColors.mediumGray, incidentType: IncidentType.other),
   ];
+
+  List<String> _recentTypes = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRecents();
+  }
+
+  Future<void> _loadRecents() async {
+    final prefs = await SharedPreferences.getInstance();
+    final stored = prefs.getStringList(_prefsKey);
+    if (stored != null && mounted) {
+      setState(() => _recentTypes = stored);
+    }
+  }
+
+  Future<void> _saveRecent(IncidentType type) async {
+    final name = type.toJson();
+    _recentTypes.remove(name);
+    _recentTypes.insert(0, name);
+    if (_recentTypes.length > 2) _recentTypes = _recentTypes.sublist(0, 2);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_prefsKey, _recentTypes);
+  }
+
+  void _selectCase(_CaseType c) {
+    _saveRecent(c.incidentType);
+    context.go(
+      '/driver/severity',
+      extra: {
+        'label': c.label.replaceAll('\n', ' '),
+        'incidentType': c.incidentType.toJson(),
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final onSurface = theme.colorScheme.onSurface;
+
+    // Build recent chips from persisted types
+    final recentCases = _recentTypes
+        .map((name) {
+          final type = IncidentType.fromJson(name);
+          return _cases.where((c) => c.incidentType == type).firstOrNull;
+        })
+        .whereType<_CaseType>()
+        .toList();
 
     return Scaffold(
       body: SafeArea(
@@ -53,16 +106,22 @@ class EmergencyCaseScreen extends StatelessWidget {
               const SizedBox(height: 24),
 
               // Recent
-              Row(
-                children: [
-                  Text('RECENT:', style: AppTypography.overline.copyWith(color: AppColors.mediumGray)),
-                  const SizedBox(width: 12),
-                  _RecentChip(icon: Icons.favorite, label: 'Heart'),
-                  const SizedBox(width: 8),
-                  _RecentChip(icon: Icons.car_crash, label: 'Accident'),
-                ],
-              ),
-              const SizedBox(height: 24),
+              if (recentCases.isNotEmpty) ...[
+                Row(
+                  children: [
+                    Text('RECENT:', style: AppTypography.overline.copyWith(color: AppColors.mediumGray)),
+                    const SizedBox(width: 12),
+                    for (final rc in recentCases) ...[
+                      GestureDetector(
+                        onTap: () => _selectCase(rc),
+                        child: _RecentChip(icon: rc.icon, label: rc.label.replaceAll('\n', ' ')),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 24),
+              ],
 
               // Grid
               Expanded(
@@ -74,13 +133,7 @@ class EmergencyCaseScreen extends StatelessWidget {
                   children: _cases.map((c) {
                     return _CaseCard(
                       caseType: c,
-                      onTap: () => context.go(
-                        '/driver/severity',
-                        extra: {
-                          'label': c.label.replaceAll('\n', ' '),
-                          'incidentType': c.incidentType.toJson(),
-                        },
-                      ),
+                      onTap: () => _selectCase(c),
                     );
                   }).toList(),
                 ),
@@ -116,14 +169,14 @@ class _CaseCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: cardColor,
-          borderRadius: AppSpacing.borderRadiusLg,
+          borderRadius: AppSpacing.borderRadiusCard,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 52,
-              height: 52,
+              width: 56,
+              height: 56,
               decoration: BoxDecoration(
                 color: caseType.color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(14),

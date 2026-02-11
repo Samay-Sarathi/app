@@ -19,13 +19,13 @@ class TriageSyncScreen extends StatefulWidget {
 class _TriageSyncScreenState extends State<TriageSyncScreen> {
   final _triageService = TriageService();
 
-  final _heartRateController = TextEditingController(text: '92');
-  final _bpController = TextEditingController(text: '140/90');
-  final _spo2Controller = TextEditingController(text: '94');
-  final _respiratoryRateController = TextEditingController(text: '18');
-  final _temperatureController = TextEditingController(text: '37.0');
-  final _gcsController = TextEditingController(text: '15');
-  final _painLevelController = TextEditingController(text: '5');
+  final _heartRateController = TextEditingController();
+  final _bpController = TextEditingController();
+  final _spo2Controller = TextEditingController();
+  final _respiratoryRateController = TextEditingController();
+  final _temperatureController = TextEditingController();
+  final _gcsController = TextEditingController();
+  final _painLevelController = TextEditingController();
   final _notesController = TextEditingController();
 
   bool _isSending = false;
@@ -153,7 +153,7 @@ class _TriageSyncScreenState extends State<TriageSyncScreen> {
                       Container(
                         padding: const EdgeInsets.all(AppSpacing.spaceMd),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF16213E),
+                          color: AppColors.surface1,
                           borderRadius: AppSpacing.borderRadiusLg,
                         ),
                         child: Column(
@@ -219,7 +219,7 @@ class _TriageSyncScreenState extends State<TriageSyncScreen> {
                       Container(
                         padding: const EdgeInsets.all(AppSpacing.spaceMd),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF16213E),
+                          color: AppColors.surface1,
                           borderRadius: AppSpacing.borderRadiusLg,
                         ),
                         child: Column(
@@ -347,7 +347,7 @@ class _VitalInput extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.spaceMd),
       decoration: BoxDecoration(
-        color: const Color(0xFF16213E),
+        color: AppColors.surface1,
         borderRadius: AppSpacing.borderRadiusLg,
       ),
       child: Column(

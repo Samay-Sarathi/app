@@ -20,9 +20,11 @@ import '../features/hospital/screens/ambulance_sync_screen.dart';
 import '../features/hospital/hospital_dashboard_screen.dart';
 import '../features/admin/admin_dashboard_screen.dart';
 import '../features/police/police_dashboard_screen.dart';
+import '../shared/screens/about_screen.dart';
+import '../shared/screens/terms_screen.dart';
 
 /// Routes that don't require authentication.
-const _publicPaths = {'/', '/roles', '/sign-in', '/register'};
+const _publicPaths = {'/', '/roles', '/sign-in', '/register', '/about', '/terms'};
 
 /// Allowed route prefixes per role.
 const _roleRoutes = <UserRole, List<String>>{
@@ -154,6 +156,16 @@ class AppRouter {
       GoRoute(
         path: '/paramedic/qr-scan',
         builder: (context, state) => const QrScanScreen(),
+      ),
+
+      // Shared screens
+      GoRoute(
+        path: '/about',
+        builder: (context, state) => const AboutScreen(),
+      ),
+      GoRoute(
+        path: '/terms',
+        builder: (context, state) => const TermsScreen(),
       ),
     ],
   );

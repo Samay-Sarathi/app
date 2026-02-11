@@ -370,7 +370,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
               elevation: 4,
               child: Icon(
                 _isFollowingUser ? Icons.my_location : Icons.location_searching,
-                color: _isFollowingUser ? const Color(0xFF4285F4) : AppColors.mediumGray,
+                color: _isFollowingUser ? AppColors.navBlueSoft : AppColors.mediumGray,
                 size: 22,
               ),
             ),

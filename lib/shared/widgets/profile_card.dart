@@ -24,20 +24,26 @@ class ProfileCard extends StatelessWidget {
     final cardColor = Theme.of(context).colorScheme.surface;
     final onSurface = Theme.of(context).colorScheme.onSurface;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(AppSpacing.spaceMd),
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius: AppSpacing.borderRadiusLg,
+        borderRadius: AppSpacing.borderRadiusCard,
+        boxShadow: isDark ? AppSpacing.shadowSmDark : AppSpacing.shadowSm,
+        border: Border.all(
+          color: isDark ? AppColors.cardBorderDark : AppColors.cardBorderLight,
+        ),
       ),
       child: Row(
         children: [
           Container(
-            width: 48,
-            height: 48,
+            width: 52,
+            height: 52,
             decoration: BoxDecoration(
               color: iconColor.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
+              borderRadius: BorderRadius.circular(16),
             ),
             child: Icon(icon, color: iconColor, size: 28),
           ),

@@ -235,7 +235,7 @@ class _CapacityTabState extends State<CapacityTab> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             decoration: BoxDecoration(
-                              gradient: const LinearGradient(colors: [AppColors.hospitalTeal, Color(0xFF0A8F6F)]),
+                              gradient: const LinearGradient(colors: [AppColors.hospitalTeal, AppColors.tealDark]),
                               borderRadius: AppSpacing.borderRadiusMd,
                               boxShadow: [BoxShadow(color: AppColors.hospitalTeal.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 3))],
                             ),
@@ -457,14 +457,8 @@ class _CapacityTabState extends State<CapacityTab> {
           ),
           const SizedBox(height: 24),
 
-          // ── Action Buttons ──
-          Row(
-            children: [
-              Expanded(child: GhostButton(label: 'View Alerts', icon: Icons.notifications, onPressed: () {})),
-              const SizedBox(width: 12),
-              Expanded(child: PrimaryButton(label: 'SYNC & RESET', icon: Icons.sync, onPressed: _syncHeartbeat)),
-            ],
-          ),
+          // ── Action Button ──
+          PrimaryButton(label: 'SYNC & RESET', icon: Icons.sync, onPressed: _syncHeartbeat),
           const SizedBox(height: 16),
         ],
       ),

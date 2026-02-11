@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../shared/widgets/lifeline_logo.dart';
 
 class RoleSelectionScreen extends StatelessWidget {
   const RoleSelectionScreen({super.key});
@@ -18,15 +19,7 @@ class RoleSelectionScreen extends StatelessWidget {
           child: Column(
             children: [
               const SizedBox(height: 40),
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  color: AppColors.lifelineGreen,
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: const Icon(Icons.favorite, size: 40, color: AppColors.white),
-              ),
+              const LifelineLogo(size: 72),
               const SizedBox(height: 16),
               Text(
                 'LIFELINE',
@@ -46,7 +39,7 @@ class RoleSelectionScreen extends StatelessWidget {
                   crossAxisCount: 2,
                   mainAxisSpacing: 16,
                   crossAxisSpacing: 16,
-                  childAspectRatio: 1.2,
+                  childAspectRatio: 1.15,
                   children: [
                     _RoleCard(
                       icon: Icons.local_shipping,
@@ -120,23 +113,28 @@ class _RoleCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cardColor = Theme.of(context).colorScheme.surface;
     final onSurface = Theme.of(context).colorScheme.onSurface;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
           color: cardColor,
-          borderRadius: AppSpacing.borderRadiusLg,
+          borderRadius: AppSpacing.borderRadiusCard,
+          boxShadow: isDark ? AppSpacing.shadowSmDark : AppSpacing.shadowSm,
+          border: Border.all(
+            color: isDark ? AppColors.cardBorderDark : AppColors.cardBorderLight,
+          ),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 52,
-              height: 52,
+              width: 56,
+              height: 56,
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(icon, size: 28, color: color),
             ),

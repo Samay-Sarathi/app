@@ -39,6 +39,10 @@ class _AmbulanceSyncScreenState extends State<AmbulanceSyncScreen> {
   BitmapDescriptor? _hospitalIcon;
   BitmapDescriptor? _ambulanceIcon;
 
+  // Readiness checklist
+  static const _readinessItems = ['ER Bay', 'Trauma Team', 'Blood Bank', 'Equipment'];
+  final List<bool> _readinessChecked = List.filled(4, false);
+
   @override
   void initState() {
     super.initState();
@@ -213,7 +217,7 @@ class _AmbulanceSyncScreenState extends State<AmbulanceSyncScreen> {
                       padding: const EdgeInsets.all(AppSpacing.spaceMd),
                       decoration: BoxDecoration(
                         color: AppColors.emergencyRed.withValues(alpha: 0.1),
-                        borderRadius: AppSpacing.borderRadiusMd,
+                        borderRadius: AppSpacing.borderRadiusCard,
                         border: Border.all(color: AppColors.emergencyRed.withValues(alpha: 0.3)),
                       ),
                       child: Column(
@@ -232,15 +236,14 @@ class _AmbulanceSyncScreenState extends State<AmbulanceSyncScreen> {
                       padding: const EdgeInsets.all(AppSpacing.spaceMd),
                       decoration: BoxDecoration(
                         color: cardColor,
-                        borderRadius: AppSpacing.borderRadiusMd,
+                        borderRadius: AppSpacing.borderRadiusCard,
                         boxShadow: AppSpacing.shadowSm,
                       ),
                       child: Column(
                         children: [
                           Text('COMPLAINT', style: AppTypography.overline.copyWith(color: AppColors.mediumGray)),
                           const SizedBox(height: 4),
-                          Text('GSW/', style: AppTypography.heading3.copyWith(color: onSurface)),
-                          Text('Hemorrhage', style: AppTypography.caption.copyWith(color: AppColors.mediumGray)),
+                          Text(incidentLabel, style: AppTypography.heading3.copyWith(color: onSurface)),
                         ],
                       ),
                     ),
@@ -311,23 +314,32 @@ class _AmbulanceSyncScreenState extends State<AmbulanceSyncScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Readiness
+              // Readiness checklist
               Row(
                 children: [
                   Text('READINESS:', style: AppTypography.overline.copyWith(color: AppColors.mediumGray)),
-                  const SizedBox(width: 12),
-                  ...List.generate(4, (i) {
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 4),
-                      child: Icon(
-                        i < 2 ? Icons.check_box : Icons.check_box_outline_blank,
-                        size: 22,
-                        color: i < 2 ? AppColors.lifelineGreen : AppColors.lightGray,
+                  const SizedBox(width: 8),
+                  ...List.generate(_readinessItems.length, (i) {
+                    return GestureDetector(
+                      onTap: () => setState(() => _readinessChecked[i] = !_readinessChecked[i]),
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 2),
+                        child: Tooltip(
+                          message: _readinessItems[i],
+                          child: Icon(
+                            _readinessChecked[i] ? Icons.check_box : Icons.check_box_outline_blank,
+                            size: 22,
+                            color: _readinessChecked[i] ? AppColors.lifelineGreen : AppColors.lightGray,
+                          ),
+                        ),
                       ),
                     );
                   }),
                   const SizedBox(width: 4),
-                  Text('2/4', style: AppTypography.bodyS.copyWith(color: AppColors.mediumGray)),
+                  Text(
+                    '${_readinessChecked.where((c) => c).length}/${_readinessItems.length}',
+                    style: AppTypography.bodyS.copyWith(color: AppColors.mediumGray),
+                  ),
                 ],
               ),
 

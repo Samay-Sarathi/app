@@ -43,4 +43,9 @@ class AuthService {
     final response = await _client.post('/auth/register', data: data);
     return AuthUser.fromJson(response.data as Map<String, dynamic>);
   }
+
+  /// `POST /auth/device-token` — Register FCM device token for push notifications.
+  Future<void> registerDeviceToken(String token) async {
+    await _client.post('/auth/device-token', data: {'token': token});
+  }
 }

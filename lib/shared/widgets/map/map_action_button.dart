@@ -37,7 +37,7 @@ class MapActionButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Column(

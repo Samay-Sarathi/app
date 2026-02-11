@@ -1,10 +1,12 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/providers/hospital_provider.dart';
+import '../../../core/services/websocket_service.dart';
+import '../../../core/utils/navigation_helpers.dart';
 import '../widgets/hospital_shared_widgets.dart';
 
 /// Incoming patients tab — shows ambulances en route, accept/decline, live tracking.
@@ -19,30 +21,55 @@ class _IncomingTabState extends State<IncomingTab> {
   final Set<String> _acceptedTrips = {};
   final Set<String> _declinedTrips = {};
   final Map<String, String> _declineReasons = {};
-  final Map<String, int> _ambulanceDistances = {};
-  Timer? _distanceTimer;
 
-  @override
-  void initState() {
-    super.initState();
-    _distanceTimer = Timer.periodic(const Duration(seconds: 3), (_) {
-      if (!mounted) return;
-      bool changed = false;
-      for (final id in _acceptedTrips) {
-        final current = _ambulanceDistances[id] ?? 2000;
-        if (current > 0) {
-          _ambulanceDistances[id] = (current - 150).clamp(0, 99999);
-          changed = true;
-        }
-      }
-      if (changed) setState(() {});
-    });
-  }
+  // Real-time ambulance locations from WebSocket
+  final Map<String, LatLng> _ambulanceLocations = {};
+  final Set<String> _subscribedTopics = {};
 
   @override
   void dispose() {
-    _distanceTimer?.cancel();
+    _unsubscribeAll();
     super.dispose();
+  }
+
+  // ── WebSocket Location Tracking ──
+
+  void _subscribeToLocation(String tripId) {
+    final topic = '/topic/trip/$tripId/location';
+    if (_subscribedTopics.contains(topic)) return;
+
+    final ws = context.read<WebSocketService>();
+    ws.subscribe(topic, (data) {
+      if (!mounted) return;
+      final lat = (data['latitude'] as num?)?.toDouble();
+      final lng = (data['longitude'] as num?)?.toDouble();
+      if (lat != null && lng != null) {
+        setState(() => _ambulanceLocations[tripId] = LatLng(lat, lng));
+      }
+    });
+    _subscribedTopics.add(topic);
+  }
+
+  void _unsubscribeAll() {
+    final ws = context.read<WebSocketService>();
+    for (final topic in _subscribedTopics) {
+      try { ws.unsubscribe(topic); } catch (_) {}
+    }
+    _subscribedTopics.clear();
+  }
+
+  int _getDistanceMeters(String tripId) {
+    final ambulanceLoc = _ambulanceLocations[tripId];
+    if (ambulanceLoc == null) return -1; // No location data yet
+
+    final hp = context.read<HospitalProvider>();
+    final hb = hp.heartbeat;
+    if (hb == null || hb.latitude == 0) return -1;
+
+    return NavigationHelpers.haversineDistance(
+      ambulanceLoc,
+      LatLng(hb.latitude, hb.longitude),
+    ).round();
   }
 
   // ── Trip Decision Dialog ──
@@ -69,7 +96,7 @@ class _IncomingTabState extends State<IncomingTab> {
                 children: [
                   const Icon(Icons.local_hospital, size: 40, color: AppColors.white),
                   const SizedBox(height: 8),
-                  Text('🚑 INCOMING AMBULANCE',
+                  Text('INCOMING AMBULANCE',
                       style: AppTypography.heading3.copyWith(color: AppColors.white, letterSpacing: 1.2)),
                   const SizedBox(height: 4),
                   Text('Prepare to receive patient',
@@ -142,7 +169,7 @@ class _IncomingTabState extends State<IncomingTab> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             decoration: BoxDecoration(
-                              gradient: const LinearGradient(colors: [AppColors.lifelineGreen, Color(0xFF15A366)]),
+                              gradient: const LinearGradient(colors: [AppColors.lifelineGreen, AppColors.greenDark]),
                               borderRadius: AppSpacing.borderRadiusMd,
                               boxShadow: [BoxShadow(color: AppColors.lifelineGreen.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 3))],
                             ),
@@ -196,7 +223,7 @@ class _IncomingTabState extends State<IncomingTab> {
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
                 decoration: const BoxDecoration(
-                  gradient: LinearGradient(colors: [AppColors.emergencyRed, Color(0xFFB71C1C)]),
+                  gradient: LinearGradient(colors: [AppColors.emergencyRed, AppColors.redDark]),
                 ),
                 child: Column(
                   children: [
@@ -300,7 +327,7 @@ class _IncomingTabState extends State<IncomingTab> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(vertical: 14),
                                 decoration: BoxDecoration(
-                                  gradient: const LinearGradient(colors: [AppColors.emergencyRed, Color(0xFFB71C1C)]),
+                                  gradient: const LinearGradient(colors: [AppColors.emergencyRed, AppColors.redDark]),
                                   borderRadius: AppSpacing.borderRadiusMd,
                                 ),
                                 child: Center(child: Text('Confirm Decline', style: AppTypography.bodyS.copyWith(color: AppColors.white, fontWeight: FontWeight.w700))),
@@ -327,13 +354,14 @@ class _IncomingTabState extends State<IncomingTab> {
     if (!mounted) return;
 
     if (accepted == true) {
-      setState(() { _acceptedTrips.add(trip.id); _ambulanceDistances[trip.id] = 2000; });
+      setState(() => _acceptedTrips.add(trip.id));
+      _subscribeToLocation(trip.id);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Row(children: [
             Icon(Icons.check_circle, color: AppColors.white, size: 18),
             SizedBox(width: 8),
-            Expanded(child: Text('Patient accepted — live location shared')),
+            Expanded(child: Text('Patient accepted — live tracking started')),
           ]),
           backgroundColor: AppColors.lifelineGreen,
           behavior: SnackBarBehavior.floating,
@@ -430,14 +458,15 @@ class _IncomingTabState extends State<IncomingTab> {
             Expanded(
               child: ListView.separated(
                 itemCount: hp.incomingTrips.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                separatorBuilder: (_, _) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
                   final trip = hp.incomingTrips[index];
                   final sevColor = trip.severity >= 7 ? AppColors.emergencyRed : AppColors.warmOrange;
                   final isAccepted = _acceptedTrips.contains(trip.id);
                   final isDeclined = _declinedTrips.contains(trip.id);
-                  final distanceM = _ambulanceDistances[trip.id] ?? 2000;
-                  final isInRange = distanceM <= 500;
+                  final distanceM = isAccepted ? _getDistanceMeters(trip.id) : -1;
+                  final hasLocation = distanceM >= 0;
+                  final isInRange = hasLocation && distanceM <= 500;
 
                   return Container(
                     clipBehavior: Clip.antiAlias,
@@ -495,7 +524,7 @@ class _IncomingTabState extends State<IncomingTab> {
 
                               // ── ACCEPTED ──
                               if (isAccepted) ...[
-                                _buildLiveTrackingCard(distanceM, isInRange),
+                                _buildLiveTrackingCard(distanceM, hasLocation, isInRange),
                                 const SizedBox(height: 10),
                                 _buildAcceptedStatus(trip, isInRange, hp),
                               ]
@@ -519,7 +548,7 @@ class _IncomingTabState extends State<IncomingTab> {
     );
   }
 
-  Widget _buildLiveTrackingCard(int distanceM, bool isInRange) {
+  Widget _buildLiveTrackingCard(int distanceM, bool hasLocation, bool isInRange) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
@@ -547,20 +576,27 @@ class _IncomingTabState extends State<IncomingTab> {
               Icon(Icons.my_location, size: 14, color: isInRange ? AppColors.lifelineGreen : AppColors.medicalBlue),
               const SizedBox(width: 4),
               Text(
-                distanceM >= 1000 ? '${(distanceM / 1000).toStringAsFixed(1)} km away' : '${distanceM}m away',
-                style: AppTypography.caption.copyWith(color: isInRange ? AppColors.lifelineGreen : AppColors.medicalBlue, fontWeight: FontWeight.w700),
+                hasLocation
+                    ? (distanceM >= 1000 ? '${(distanceM / 1000).toStringAsFixed(1)} km away' : '${distanceM}m away')
+                    : 'Waiting for location...',
+                style: AppTypography.caption.copyWith(
+                  color: hasLocation ? (isInRange ? AppColors.lifelineGreen : AppColors.medicalBlue) : AppColors.mediumGray,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(3),
-            child: LinearProgressIndicator(
-              value: 1.0 - (distanceM / 2000).clamp(0.0, 1.0), minHeight: 4,
-              backgroundColor: AppColors.medicalBlue.withValues(alpha: 0.15),
-              valueColor: AlwaysStoppedAnimation(isInRange ? AppColors.lifelineGreen : AppColors.medicalBlue),
+          if (hasLocation) ...[
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(3),
+              child: LinearProgressIndicator(
+                value: (1.0 - (distanceM / 5000).clamp(0.0, 1.0)), minHeight: 4,
+                backgroundColor: AppColors.medicalBlue.withValues(alpha: 0.15),
+                valueColor: AlwaysStoppedAnimation(isInRange ? AppColors.lifelineGreen : AppColors.medicalBlue),
+              ),
             ),
-          ),
+          ],
           if (isInRange) ...[
             const SizedBox(height: 6),
             Row(children: [
@@ -654,42 +690,24 @@ class _IncomingTabState extends State<IncomingTab> {
   }
 
   Widget _buildRespondRow(dynamic trip) {
-    return Row(
-      children: [
-        Expanded(
-          child: GestureDetector(
-            onTap: () => _handleReviewTrip(trip),
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [AppColors.lifelineGreen, Color(0xFF15A366)]),
-                borderRadius: AppSpacing.borderRadiusSm,
-                boxShadow: [BoxShadow(color: AppColors.lifelineGreen.withValues(alpha: 0.25), blurRadius: 6, offset: const Offset(0, 2))],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.notifications_active, size: 16, color: AppColors.white),
-                  const SizedBox(width: 6),
-                  Text('Review & Respond', style: AppTypography.bodyS.copyWith(color: AppColors.white, fontWeight: FontWeight.w700)),
-                ],
-              ),
-            ),
-          ),
+    return GestureDetector(
+      onTap: () => _handleReviewTrip(trip),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(colors: [AppColors.lifelineGreen, AppColors.greenDark]),
+          borderRadius: AppSpacing.borderRadiusSm,
+          boxShadow: [BoxShadow(color: AppColors.lifelineGreen.withValues(alpha: 0.25), blurRadius: 6, offset: const Offset(0, 2))],
         ),
-        const SizedBox(width: 8),
-        GestureDetector(
-          onTap: () {},
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            decoration: BoxDecoration(
-              color: AppColors.medicalBlue.withValues(alpha: 0.1),
-              borderRadius: AppSpacing.borderRadiusSm,
-            ),
-            child: const Icon(Icons.open_in_new, size: 18, color: AppColors.medicalBlue),
-          ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.notifications_active, size: 16, color: AppColors.white),
+            const SizedBox(width: 6),
+            Text('Review & Respond', style: AppTypography.bodyS.copyWith(color: AppColors.white, fontWeight: FontWeight.w700)),
+          ],
         ),
-      ],
+      ),
     );
   }
 }

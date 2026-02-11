@@ -21,12 +21,17 @@ class StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cardColor = Theme.of(context).colorScheme.surface;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.spaceSm),
+      padding: const EdgeInsets.all(AppSpacing.spaceMd),
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius: AppSpacing.borderRadiusMd,
+        borderRadius: AppSpacing.borderRadiusCard,
+        boxShadow: isDark ? AppSpacing.shadowSmDark : AppSpacing.shadowSm,
+        border: Border.all(
+          color: isDark ? AppColors.cardBorderDark : AppColors.cardBorderLight,
+        ),
       ),
       child: Column(
         children: [

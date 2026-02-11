@@ -81,7 +81,7 @@ class MapPlaceholder extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF0D1117),
+        color: AppColors.mapBackground,
         borderRadius: AppSpacing.borderRadiusLg,
         border: Border.all(
           color: AppColors.lifelineGreen.withValues(alpha: 0.15),
@@ -119,7 +119,7 @@ class MapPlaceholder extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0D1117).withValues(alpha: 0.9),
+                  color: AppColors.mapBackground.withValues(alpha: 0.9),
                   borderRadius: AppSpacing.borderRadiusSm,
                   border: Border.all(
                     color: AppColors.lifelineGreen.withValues(alpha: 0.3),
@@ -224,7 +224,7 @@ class _MarkerDot extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
           decoration: BoxDecoration(
-            color: const Color(0xFF0D1117).withValues(alpha: 0.85),
+            color: AppColors.mapBackground.withValues(alpha: 0.85),
             borderRadius: BorderRadius.circular(4),
           ),
           child: Text(

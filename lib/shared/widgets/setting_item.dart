@@ -22,6 +22,7 @@ class SettingItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final cardColor = Theme.of(context).colorScheme.surface;
     final onSurface = Theme.of(context).colorScheme.onSurface;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GestureDetector(
       onTap: onTap,
@@ -30,7 +31,11 @@ class SettingItem extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.spaceMd, vertical: 14),
         decoration: BoxDecoration(
           color: cardColor,
-          borderRadius: AppSpacing.borderRadiusMd,
+          borderRadius: AppSpacing.borderRadiusLg,
+          boxShadow: isDark ? AppSpacing.shadowSmDark : AppSpacing.shadowSm,
+          border: Border.all(
+            color: isDark ? AppColors.cardBorderDark : AppColors.cardBorderLight,
+          ),
         ),
         child: Row(
           children: [

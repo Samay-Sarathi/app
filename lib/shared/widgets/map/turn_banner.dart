@@ -44,8 +44,8 @@ class TurnBanner extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF1A73E8),
-            borderRadius: BorderRadius.circular(16),
+            color: AppColors.navBlue,
+            borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.3),
@@ -157,8 +157,8 @@ class TurnBanner extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: const Color(0xFF1A73E8),
-            borderRadius: BorderRadius.circular(16),
+            color: AppColors.navBlue,
+            borderRadius: BorderRadius.circular(20),
           ),
           child: const Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -189,7 +189,7 @@ class TurnBanner extends StatelessWidget {
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: AppColors.emergencyRed,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(20),
           ),
           child: Row(
             children: [

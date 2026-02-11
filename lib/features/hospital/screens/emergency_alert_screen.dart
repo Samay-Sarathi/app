@@ -89,7 +89,7 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen>
                 padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [AppColors.emergencyRed, Color(0xFFB71C1C)],
+                    colors: [AppColors.emergencyRed, AppColors.redDark],
                   ),
                 ),
                 child: Column(
@@ -244,7 +244,7 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen>
                                 padding: const EdgeInsets.symmetric(vertical: 14),
                                 decoration: BoxDecoration(
                                   gradient: const LinearGradient(
-                                    colors: [AppColors.emergencyRed, Color(0xFFB71C1C)],
+                                    colors: [AppColors.emergencyRed, AppColors.redDark],
                                   ),
                                   borderRadius: AppSpacing.borderRadiusMd,
                                 ),
@@ -301,17 +301,20 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen>
                       borderRadius: AppSpacing.borderRadiusFull,
                     ),
                     child: Text(
-                      'PRIORITY 1',
+                      incomingTrip != null
+                          ? (incomingTrip.severity >= 8
+                              ? 'PRIORITY 1'
+                              : incomingTrip.severity >= 5
+                                  ? 'PRIORITY 2'
+                                  : 'PRIORITY 3')
+                          : 'PRIORITY 1',
                       style: AppTypography.overline.copyWith(
                         color: AppColors.white,
                         letterSpacing: 2,
                       ),
                     ),
                   ),
-                  GestureDetector(
-                    onTap: () {},
-                    child: const Icon(Icons.volume_up, color: AppColors.white, size: 28),
-                  ),
+                  const SizedBox(width: 28),
                 ],
               ),
               const Spacer(flex: 1),

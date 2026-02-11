@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/navigation_helpers.dart';
 
 /// Draggable bottom sheet for the navigation screen.
@@ -80,7 +81,7 @@ class NavBottomSheet extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.w700,
-                          color: const Color(0xFF1A73E8),
+                          color: AppColors.navBlue,
                           height: 1.1,
                         ),
                       ),

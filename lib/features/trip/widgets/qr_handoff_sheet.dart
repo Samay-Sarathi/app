@@ -176,7 +176,7 @@ Future<void> showQrHandoffSheet(BuildContext context, dynamic trip) async {
               padding: const EdgeInsets.symmetric(vertical: 14),
               decoration: BoxDecoration(
                 color: AppColors.mediumGray.withValues(alpha: 0.2),
-                borderRadius: AppSpacing.borderRadiusMd,
+                borderRadius: AppSpacing.borderRadiusFull,
               ),
               child: Text(
                 'Close',

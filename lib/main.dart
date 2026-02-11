@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -7,26 +8,46 @@ import 'core/providers/auth_provider.dart';
 import 'core/providers/trip_provider.dart';
 import 'core/providers/hospital_provider.dart';
 import 'core/services/websocket_service.dart';
+import 'core/services/connectivity_service.dart';
+import 'core/services/notification_service.dart';
+import 'shared/widgets/connectivity_banner.dart';
+import 'firebase_options.dart';
 import 'routes/app_router.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-  runApp(const LifeLineApp());
+
+  // Initialize Firebase (graceful fallback if not configured yet)
+  try {
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    await NotificationService.instance.init();
+  } catch (_) {
+    // Firebase not configured — app runs without push notifications
+    debugPrint('Firebase not configured. Run `flutterfire configure` to enable push notifications.');
+  }
+
+  // Initialize persisted settings before building the widget tree
+  final settings = SettingsProvider();
+  await settings.init();
+
+  runApp(LifeLineApp(settings: settings));
 }
 
 class LifeLineApp extends StatelessWidget {
-  const LifeLineApp({super.key});
+  final SettingsProvider settings;
+  const LifeLineApp({super.key, required this.settings});
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => SettingsProvider()),
+        ChangeNotifierProvider.value(value: settings),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => TripProvider()),
         ChangeNotifierProvider(create: (_) => HospitalProvider()),
         ChangeNotifierProvider(create: (_) => WebSocketService()),
+        ChangeNotifierProvider(create: (_) => ConnectivityService()),
       ],
       child: _WebSocketBridge(
         child: Consumer<SettingsProvider>(
@@ -38,6 +59,8 @@ class LifeLineApp extends StatelessWidget {
               darkTheme: AppTheme.darkTheme,
               themeMode: settings.themeMode,
               routerConfig: AppRouter.router,
+              builder: (context, child) =>
+                  ConnectivityBanner(child: child ?? const SizedBox.shrink()),
             );
           },
         ),
@@ -46,8 +69,9 @@ class LifeLineApp extends StatelessWidget {
   }
 }
 
-/// Bridges AuthProvider ↔ WebSocketService so that connect/disconnect
+/// Bridges AuthProvider <-> WebSocketService so that connect/disconnect
 /// happens automatically on login / logout / session restore.
+/// Also registers the FCM device token with the backend after login.
 class _WebSocketBridge extends StatefulWidget {
   final Widget child;
   const _WebSocketBridge({required this.child});
@@ -65,7 +89,23 @@ class _WebSocketBridgeState extends State<_WebSocketBridge> {
       final auth = context.read<AuthProvider>();
       final ws = context.read<WebSocketService>();
       auth.attachWebSocket(ws);
+
+      // Register FCM token after auth restores session
+      _registerDeviceToken(auth);
+
+      // Re-register on token refresh
+      NotificationService.instance.onTokenRefresh.listen((_) {
+        _registerDeviceToken(auth);
+      });
     });
+  }
+
+  Future<void> _registerDeviceToken(AuthProvider auth) async {
+    if (!auth.isAuthenticated) return;
+    final token = await NotificationService.instance.getDeviceToken();
+    if (token != null) {
+      auth.registerDeviceToken(token);
+    }
   }
 
   @override

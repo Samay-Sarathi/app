@@ -192,7 +192,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     height: 40,
                     decoration: BoxDecoration(
                       color: onSurface.withValues(alpha: 0.05),
-                      borderRadius: BorderRadius.circular(12),
+                      shape: BoxShape.circle,
                     ),
                     child: Icon(Icons.arrow_back, color: onSurface, size: 20),
                   ),
@@ -413,7 +413,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       children: [
         // Required credentials first
         _buildCredentialFields(onSurface),
-        const SizedBox(height: 24),
+        const SizedBox(height: 28),
 
         // Optional role-specific fields
         _buildSectionLabel('Additional Details', Icons.local_shipping_outlined),
@@ -454,7 +454,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       children: [
         // Required credentials first
         _buildCredentialFields(onSurface),
-        const SizedBox(height: 24),
+        const SizedBox(height: 28),
 
         // Optional role-specific fields
         _buildSectionLabel('Hospital Details', Icons.local_hospital_outlined),
@@ -514,7 +514,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       children: [
         // Required credentials first
         _buildCredentialFields(onSurface),
-        const SizedBox(height: 24),
+        const SizedBox(height: 28),
 
         // Optional role-specific fields
         _buildSectionLabel('Department Details', Icons.shield_outlined),
@@ -604,7 +604,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           color: hasFile
               ? _roleColor.withValues(alpha: 0.06)
               : onSurface.withValues(alpha: 0.03),
-          borderRadius: AppSpacing.borderRadiusMd,
+          borderRadius: AppSpacing.borderRadiusLg,
           border: Border.all(
             color: hasFile
                 ? _roleColor.withValues(alpha: 0.3)

@@ -122,7 +122,7 @@ class _QrScanScreenState extends State<QrScanScreen> {
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: AppColors.lifelineGreen.withValues(alpha: 0.1),
-                      borderRadius: AppSpacing.borderRadiusMd,
+                      borderRadius: AppSpacing.borderRadiusCard,
                     ),
                     child: Row(
                       children: [
@@ -146,7 +146,7 @@ class _QrScanScreenState extends State<QrScanScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.lifelineGreen,
                         foregroundColor: AppColors.white,
-                        shape: RoundedRectangleBorder(borderRadius: AppSpacing.borderRadiusMd),
+                        shape: const StadiumBorder(),
                       ),
                       child: const Text('View Trip', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                     ),

@@ -197,7 +197,7 @@ class _SignInScreenState extends State<SignInScreen>
                         height: 40,
                         decoration: BoxDecoration(
                           color: onSurface.withValues(alpha: 0.05),
-                          borderRadius: BorderRadius.circular(12),
+                          shape: BoxShape.circle,
                         ),
                         child: Icon(Icons.arrow_back,
                             color: onSurface, size: 20),
@@ -264,7 +264,7 @@ class _SignInScreenState extends State<SignInScreen>
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
 
                 // ── Password field ──
                 TextField(
@@ -306,11 +306,12 @@ class _SignInScreenState extends State<SignInScreen>
                   onTap: auth.isLoading ? null : _quickFillDev,
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: _roleColor.withValues(alpha: 0.3),
+                    decoration: ShapeDecoration(
+                      shape: StadiumBorder(
+                        side: BorderSide(
+                          color: _roleColor.withValues(alpha: 0.3),
+                        ),
                       ),
-                      borderRadius: AppSpacing.borderRadiusMd,
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,

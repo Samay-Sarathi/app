@@ -24,17 +24,23 @@ class SettingToggle extends StatelessWidget {
   Widget build(BuildContext context) {
     final cardColor = Theme.of(context).colorScheme.surface;
     final onSurface = Theme.of(context).colorScheme.onSurface;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primary = Theme.of(context).colorScheme.primary;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.spaceMd, vertical: 12),
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius: AppSpacing.borderRadiusMd,
+        borderRadius: AppSpacing.borderRadiusLg,
+        boxShadow: isDark ? AppSpacing.shadowSmDark : AppSpacing.shadowSm,
+        border: Border.all(
+          color: isDark ? AppColors.cardBorderDark : AppColors.cardBorderLight,
+        ),
       ),
       child: Row(
         children: [
-          Icon(icon, size: 22, color: AppColors.medicalBlue),
+          Icon(icon, size: 22, color: primary),
           const SizedBox(width: 14),
           Expanded(
             child: Column(

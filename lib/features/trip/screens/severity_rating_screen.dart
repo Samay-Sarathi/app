@@ -296,7 +296,7 @@ class _LevelButton extends StatelessWidget {
         height: 52,
         decoration: BoxDecoration(
           color: isSelected ? color.withValues(alpha: 0.15) : Theme.of(context).colorScheme.surface,
-          borderRadius: AppSpacing.borderRadiusMd,
+          borderRadius: AppSpacing.borderRadiusCard,
           border: Border.all(
             color: isSelected ? color : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
             width: isSelected ? 2 : 1,

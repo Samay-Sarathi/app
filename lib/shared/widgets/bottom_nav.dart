@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_spacing.dart';
 
 class LifelineBottomNav extends StatelessWidget {
   final int currentIndex;
@@ -19,17 +20,10 @@ class LifelineBottomNav extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      height: 72,
+      height: 80,
       decoration: BoxDecoration(
         color: navColor,
-        border: Border(
-          top: BorderSide(
-            color: isDark
-                ? AppColors.white.withValues(alpha: 0.06)
-                : AppColors.black.withValues(alpha: 0.06),
-            width: 1,
-          ),
-        ),
+        boxShadow: isDark ? AppSpacing.shadowSmDark : AppSpacing.shadowMd,
       ),
       child: SafeArea(
         top: false,
@@ -42,23 +36,35 @@ class LifelineBottomNav extends StatelessWidget {
               onTap: () => onTap(index),
               behavior: HitTestBehavior.opaque,
               child: SizedBox(
-                width: 64,
-                height: 48,
+                width: 68,
+                height: 52,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      item.icon,
-                      size: 24,
-                      color: isActive ? AppColors.lifelineGreen : AppColors.mediumGray,
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: isActive ? AppColors.greenTint : Colors.transparent,
+                        borderRadius: AppSpacing.borderRadiusFull,
+                      ),
+                      child: Icon(
+                        item.icon,
+                        size: 22,
+                        color: isActive
+                            ? AppColors.lifelineGreen
+                            : AppColors.mediumGray.withValues(alpha: 0.7),
+                      ),
                     ),
-                    const SizedBox(height: 3),
+                    const SizedBox(height: 2),
                     Text(
                       item.label,
                       style: TextStyle(
-                        fontSize: 10,
+                        fontSize: 11,
                         fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-                        color: isActive ? AppColors.lifelineGreen : AppColors.mediumGray,
+                        color: isActive
+                            ? AppColors.lifelineGreen
+                            : AppColors.mediumGray.withValues(alpha: 0.7),
                       ),
                     ),
                   ],

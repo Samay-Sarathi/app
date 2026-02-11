@@ -181,6 +181,16 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Register FCM device token with the backend.
+  Future<void> registerDeviceToken(String token) async {
+    if (_user == null) return;
+    try {
+      await _authService.registerDeviceToken(token);
+    } catch (_) {
+      // Non-critical — token registration can retry on next app launch
+    }
+  }
+
   /// Clear any displayed error.
   void clearError() {
     _error = null;

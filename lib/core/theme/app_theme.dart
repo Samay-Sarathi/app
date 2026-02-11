@@ -29,26 +29,26 @@ class AppTheme {
       cardTheme: CardThemeData(
         color: AppColors.white,
         elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.white,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.lightGray),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: AppColors.lightGray, width: 1.5),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.lightGray),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: AppColors.lightGray, width: 1.5),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: AppColors.medicalBlue, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: AppColors.emergencyRed, width: 2),
         ),
       ),
@@ -56,8 +56,9 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.lifelineGreen,
           foregroundColor: AppColors.white,
+          elevation: 0,
           minimumSize: const Size(double.infinity, 56),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: const StadiumBorder(),
           textStyle: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),
         ),
       ),
@@ -65,9 +66,28 @@ class AppTheme {
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.darkGray,
           minimumSize: const Size(double.infinity, 48),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          side: const BorderSide(color: AppColors.mediumGray),
+          shape: const StadiumBorder(),
+          side: BorderSide(color: AppColors.mediumGray.withValues(alpha: 0.3)),
         ),
+      ),
+      dialogTheme: DialogThemeData(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: const StadiumBorder(),
+        elevation: 0,
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.lifelineGreen;
+          return AppColors.mediumGray;
+        }),
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.greenTint;
+          return AppColors.lightGray;
+        }),
+        trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
       ),
     );
   }
@@ -81,7 +101,7 @@ class AppTheme {
         primary: AppColors.successDark,
         secondary: AppColors.infoDark,
         error: AppColors.errorDark,
-        surface: Color(0xFF16213E),
+        surface: AppColors.surface1,
         onPrimary: AppColors.white,
         onSecondary: AppColors.white,
         onError: AppColors.white,
@@ -94,24 +114,24 @@ class AppTheme {
         elevation: 0,
       ),
       cardTheme: CardThemeData(
-        color: const Color(0xFF16213E),
+        color: AppColors.surface1,
         elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFF16213E),
+        fillColor: AppColors.surface1,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF2D3748)),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: AppColors.darkGray, width: 1.5),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF2D3748)),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: AppColors.darkGray, width: 1.5),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: AppColors.infoDark, width: 2),
         ),
       ),
@@ -119,10 +139,40 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.successDark,
           foregroundColor: AppColors.white,
+          elevation: 0,
           minimumSize: const Size(double.infinity, 56),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: const StadiumBorder(),
           textStyle: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),
         ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.white,
+          minimumSize: const Size(double.infinity, 48),
+          shape: const StadiumBorder(),
+          side: BorderSide(color: AppColors.white.withValues(alpha: 0.3)),
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: AppColors.surface1,
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: const StadiumBorder(),
+        elevation: 0,
+        backgroundColor: AppColors.surface2,
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.successDark;
+          return AppColors.mediumGray;
+        }),
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.greenTint;
+          return AppColors.surface2;
+        }),
+        trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
       ),
     );
   }

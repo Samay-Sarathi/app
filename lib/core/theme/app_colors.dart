@@ -17,8 +17,8 @@ class AppColors {
 
   // ── Neutrals ──
   static const Color white = Color(0xFFFFFFFF);
-  static const Color offWhite = Color(0xFFF8F9FA);
-  static const Color lightGray = Color(0xFFE9ECEF);
+  static const Color offWhite = Color(0xFFF5F5F7);
+  static const Color lightGray = Color(0xFFEBEBF0);
   static const Color mediumGray = Color(0xFF6C757D);
   static const Color darkGray = Color(0xFF2D3748);
   static const Color black = Color(0xFF000000);
@@ -29,11 +29,17 @@ class AppColors {
   static const Color surface2 = Color(0xFF1B2A4A); // raised elements
   static const Color surface3 = Color(0xFF213555); // dialogs/modals
 
+  // ── Card tokens ──
+  static const Color cardLight = Color(0xFFFFFFFF);
+  static const Color cardBorderLight = Color(0x0A000000); // 4% black
+  static const Color cardDark = Color(0xFF1C2540);
+  static const Color cardBorderDark = Color(0x0DFFFFFF); // 5% white
+
   // ── Muted tints (for subtle backgrounds without visual noise) ──
-  static const Color greenTint = Color(0x0D1AAE6F); // 5% green
-  static const Color redTint = Color(0x0DE63946);    // 5% red
-  static const Color blueTint = Color(0x0D3498DB);   // 5% blue
-  static const Color orangeTint = Color(0x0DF4A261); // 5% orange
+  static const Color greenTint = Color(0x141AAE6F); // 8% green
+  static const Color redTint = Color(0x14E63946);    // 8% red
+  static const Color blueTint = Color(0x143498DB);   // 8% blue
+  static const Color orangeTint = Color(0x14F4A261); // 8% orange
 
   // ── Semantic - Light ──
   static const Color successLight = Color(0xFF1AAE6F);
@@ -58,6 +64,14 @@ class AppColors {
   static const Color offlineForeground = Color(0xFF721C24);
   static const Color pendingBackground = Color(0xFFE2E3E5);
   static const Color pendingForeground = Color(0xFF383D41);
+
+  // ── Centralized hardcoded colors ──
+  static const Color navBlue = Color(0xFF1A73E8);
+  static const Color navBlueSoft = Color(0xFF4285F4);
+  static const Color tealDark = Color(0xFF0A8F6F);
+  static const Color redDark = Color(0xFFB71C1C);
+  static const Color greenDark = Color(0xFF15A366);
+  static const Color mapBackground = Color(0xFF0D1117);
 
   // ── Text opacity helpers ──
   /// Use for secondary / subdued text on dark backgrounds.

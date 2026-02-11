@@ -29,9 +29,9 @@ class LogoutButton extends StatelessWidget {
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.spaceMd, vertical: 14),
-        decoration: BoxDecoration(
+        decoration: ShapeDecoration(
           color: AppColors.emergencyRed.withValues(alpha: 0.08),
-          borderRadius: AppSpacing.borderRadiusMd,
+          shape: const StadiumBorder(),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,

@@ -35,11 +35,11 @@ class DashboardHeader extends StatelessWidget {
         Row(
           children: [
             Container(
-              width: 36,
-              height: 36,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
                 color: roleColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(roleIcon, size: 20, color: roleColor),
             ),

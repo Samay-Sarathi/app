@@ -21,16 +21,21 @@ class InfoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cardColor = Theme.of(context).colorScheme.surface;
     final onSurface = Theme.of(context).colorScheme.onSurface;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final accent = accentColor ?? AppColors.medicalBlue;
 
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.spaceMd,
-        vertical: AppSpacing.spaceSm,
+        vertical: AppSpacing.spaceMd,
       ),
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius: AppSpacing.borderRadiusMd,
+        borderRadius: AppSpacing.borderRadiusCard,
+        boxShadow: isDark ? AppSpacing.shadowSmDark : AppSpacing.shadowSm,
+        border: Border.all(
+          color: isDark ? AppColors.cardBorderDark : AppColors.cardBorderLight,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -88,11 +93,12 @@ class DarkInfoCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.spaceMd,
-        vertical: AppSpacing.spaceSm,
+        vertical: AppSpacing.spaceMd,
       ),
       decoration: BoxDecoration(
         color: AppColors.surface1,
-        borderRadius: AppSpacing.borderRadiusMd,
+        borderRadius: AppSpacing.borderRadiusCard,
+        boxShadow: AppSpacing.shadowSmDark,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

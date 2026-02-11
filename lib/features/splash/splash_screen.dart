@@ -7,6 +7,7 @@ import '../../core/providers/auth_provider.dart';
 import '../../core/providers/trip_provider.dart';
 import '../../core/models/user_role.dart';
 import '../../core/models/trip_status.dart';
+import '../../shared/widgets/lifeline_logo.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -26,7 +27,7 @@ class _SplashScreenState extends State<SplashScreen>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 1800),
     );
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOut),
@@ -101,40 +102,19 @@ class _SplashScreenState extends State<SplashScreen>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    color: AppColors.lifelineGreen,
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  child: const Icon(
-                    Icons.favorite,
-                    size: 64,
-                    color: AppColors.white,
-                  ),
-                ),
-                const SizedBox(height: 24),
+                const LifelineLogo(size: 120),
+                const SizedBox(height: 28),
                 Text(
                   'LIFELINE',
                   style: AppTypography.heading1.copyWith(
                     color: onSurface,
-                    letterSpacing: 4,
+                    letterSpacing: 6,
                   ),
                 ),
-                const SizedBox(height: 8),
-                Container(
-                  width: 120,
-                  height: 3,
-                  decoration: BoxDecoration(
-                    color: AppColors.lifelineGreen,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 Text(
                   'Every Second Counts',
-                  style: AppTypography.bodyL.copyWith(
+                  style: AppTypography.bodyS.copyWith(
                     color: AppColors.mediumGray,
                   ),
                 ),
@@ -143,7 +123,7 @@ class _SplashScreenState extends State<SplashScreen>
                   width: 24,
                   height: 24,
                   child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
+                    strokeWidth: 2.0,
                     color: AppColors.lifelineGreen,
                   ),
                 ),

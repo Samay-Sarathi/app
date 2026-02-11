@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
@@ -113,7 +114,7 @@ class DriverSettingsTab extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.spaceMd, vertical: 12),
                   decoration: BoxDecoration(
                     color: cardColor,
-                    borderRadius: AppSpacing.borderRadiusMd,
+                    borderRadius: AppSpacing.borderRadiusCard,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -149,8 +150,8 @@ class DriverSettingsTab extends StatelessWidget {
                 const SizedBox(height: 24),
                 Text('SYSTEM', style: AppTypography.overline.copyWith(color: AppColors.mediumGray, letterSpacing: 1.5)),
                 const SizedBox(height: 12),
-                const SettingItem(icon: Icons.info_outline, label: 'About LifeLine', subtitle: 'Version 1.0.0'),
-                const SettingItem(icon: Icons.description_outlined, label: 'Terms of Service', subtitle: 'View legal information'),
+                SettingItem(icon: Icons.info_outline, label: 'About LifeLine', subtitle: 'Version 1.0.0', onTap: () => context.push('/about')),
+                SettingItem(icon: Icons.description_outlined, label: 'Terms of Service', subtitle: 'View legal information', onTap: () => context.push('/terms')),
                 const SizedBox(height: 24),
                 const LogoutButton(clearTrip: true),
               ],
