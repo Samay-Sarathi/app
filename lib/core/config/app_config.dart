@@ -7,13 +7,17 @@ class AppConfig {
   // ── DEV_ONLY: Set to false for production builds ──
   static const bool devMode = true;
 
-  /// iOS: LAN IP (no adb reverse on iOS)
-  /// Android: localhost via `adb reverse tcp:8080 tcp:8080`
+  /// Override the backend host IP for iOS dev builds via:
+  ///   flutter run --dart-define=DEV_HOST=192.168.x.x
+  /// Android uses localhost (adb reverse), iOS needs the Mac's LAN IP.
   /// Production: https://api.lifeline.app/api/v1
+  static const String _devHost =
+      String.fromEnvironment('DEV_HOST', defaultValue: 'localhost');
+
   static final String baseUrl = devMode
       ? (Platform.isAndroid
           ? 'http://localhost:8080/api/v1'
-          : 'http://192.168.15.90:8080/api/v1')
+          : 'http://$_devHost:8080/api/v1')
       : 'https://api.lifeline.app/api/v1';
 
   /// Master switch for Google Maps.
