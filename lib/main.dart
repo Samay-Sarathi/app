@@ -18,13 +18,16 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
-  // Initialize Firebase (graceful fallback if not configured yet)
-  try {
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-    await NotificationService.instance.init();
-  } catch (_) {
-    // Firebase not configured — app runs without push notifications
-    debugPrint('Firebase not configured. Run `flutterfire configure` to enable push notifications.');
+  // Initialize Firebase only when real credentials are configured.
+  // Placeholder values crash iOS at the native level (NSException)
+  // before Dart's try-catch can intercept.
+  if (DefaultFirebaseOptions.currentPlatform.apiKey != 'PLACEHOLDER') {
+    try {
+      await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+      await NotificationService.instance.init();
+    } catch (_) {
+      debugPrint('Firebase init failed. Run `flutterfire configure` to enable push notifications.');
+    }
   }
 
   // Initialize persisted settings before building the widget tree
