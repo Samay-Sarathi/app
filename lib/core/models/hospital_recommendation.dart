@@ -13,6 +13,7 @@ class HospitalRecommendation {
   final bool isRecommended;
   final double latitude;
   final double longitude;
+  final Map<String, bool> equipment;
 
   const HospitalRecommendation({
     required this.hospitalId,
@@ -27,6 +28,7 @@ class HospitalRecommendation {
     required this.isRecommended,
     required this.latitude,
     required this.longitude,
+    this.equipment = const {},
   });
 
   factory HospitalRecommendation.fromJson(Map<String, dynamic> json) {
@@ -48,6 +50,9 @@ class HospitalRecommendation {
       isRecommended: json['isRecommended'] as bool? ?? false,
       latitude: (json['latitude'] as num).toDouble(),
       longitude: (json['longitude'] as num).toDouble(),
+      equipment: (json['equipment'] as Map<String, dynamic>?)
+              ?.map((k, v) => MapEntry(k, v as bool)) ??
+          {},
     );
   }
 }

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <!-- Traffic signal pole -->
+  <rect x="22" y="32" width="4" height="12" rx="1" stroke="currentColor" stroke-width="2" fill="none"/>
+  <!-- Signal housing -->
+  <rect x="14" y="4" width="20" height="30" rx="4" stroke="currentColor" stroke-width="2.5" fill="none"/>
+  <!-- Red light -->
+  <circle cx="24" cy="12" r="3.5" fill="#FF5252"/>
+  <!-- Yellow light -->
+  <circle cx="24" cy="19" r="3.5" fill="#FFD740" opacity="0.5"/>
+  <!-- Green light -->
+  <circle cx="24" cy="26" r="3.5" fill="#00C853" opacity="0.3"/>
+  <!-- Signal hood -->
+  <path d="M14 7h-3v4h3" stroke="currentColor" stroke-width="1.5" fill="none"/>
+  <path d="M34 7h3v4h-3" stroke="currentColor" stroke-width="1.5" fill="none"/>
+  <!-- Base -->
+  <rect x="16" y="44" width="16" height="2" rx="1" fill="currentColor" opacity="0.4"/>
+</svg>

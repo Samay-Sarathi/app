@@ -77,6 +77,19 @@ class TripService {
     return Trip.fromJson(response.data as Map<String, dynamic>);
   }
 
+  /// `POST /trips/{id}/arrive` — Mark trip as arrived at hospital.
+  Future<Trip> markArrived(String tripId, {String? notes, double? latitude, double? longitude}) async {
+    final data = <String, dynamic>{};
+    if (notes != null) data['notes'] = notes;
+    if (latitude != null) data['latitude'] = latitude;
+    if (longitude != null) data['longitude'] = longitude;
+    final response = await _client.post(
+      '/trips/$tripId/arrive',
+      data: data.isNotEmpty ? data : null,
+    );
+    return Trip.fromJson(response.data as Map<String, dynamic>);
+  }
+
   /// `POST /trips/{id}/cancel` — Cancel an active trip.
   Future<Trip> cancelTrip(String tripId, {String? reason}) async {
     final response = await _client.post(
@@ -89,6 +102,12 @@ class TripService {
   /// `GET /trips/{id}/qr` — Get paramedic QR token.
   Future<Map<String, dynamic>> getQrToken(String tripId) async {
     final response = await _client.get('/trips/$tripId/qr');
+    return response.data as Map<String, dynamic>;
+  }
+
+  /// `GET /trips/driver-stats` — Get driver dashboard stats.
+  Future<Map<String, dynamic>> getDriverStats() async {
+    final response = await _client.get('/trips/driver-stats');
     return response.data as Map<String, dynamic>;
   }
 

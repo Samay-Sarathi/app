@@ -32,6 +32,10 @@ class _DriverStatusTabState extends State<DriverStatusTab> {
   void initState() {
     super.initState();
     _startSpeedTracking();
+    // Fetch driver stats from backend
+    Future.microtask(() {
+      context.read<TripProvider>().fetchDriverStats();
+    });
   }
 
   Future<void> _startSpeedTracking() async {
@@ -118,6 +122,39 @@ class _DriverStatusTabState extends State<DriverStatusTab> {
                   icon: connectivity.isOnline
                       ? Icons.check_circle
                       : Icons.wifi_off,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Driver stats — API-driven
+          Row(
+            children: [
+              Expanded(
+                child: StatCard(
+                  value: '${tripProvider.tripsToday}',
+                  label: 'Trips Today',
+                  color: AppColors.lifelineGreen,
+                  icon: Icons.local_hospital,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: StatCard(
+                  value: '${tripProvider.avgResponseTimeMinutes}m',
+                  label: 'Avg Response',
+                  color: AppColors.warmOrange,
+                  icon: Icons.timer,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: StatCard(
+                  value: '${tripProvider.distanceCoveredKm.toStringAsFixed(1)}km',
+                  label: 'Distance',
+                  color: AppColors.medicalBlue,
+                  icon: Icons.route,
                 ),
               ),
             ],
@@ -209,10 +246,12 @@ class _ActiveTripCard extends StatelessWidget {
               child: OutlinedButton.icon(
                 onPressed: () async {
                   final tripProvider = context.read<TripProvider>();
+                  // Capture messenger before async gap — widget may unmount after cancel
+                  final messenger = ScaffoldMessenger.of(context);
                   final cancelled =
                       await tripProvider.cancelTrip(reason: 'DEV: Manual cancel');
-                  if (context.mounted && cancelled) {
-                    ScaffoldMessenger.of(context).showSnackBar(
+                  if (cancelled) {
+                    messenger.showSnackBar(
                       const SnackBar(
                         content: Text('[DEV] Trip cancelled'),
                         backgroundColor: AppColors.warmOrange,

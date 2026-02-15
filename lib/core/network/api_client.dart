@@ -81,6 +81,13 @@ class ApiClient {
   }) =>
       _request(() => _dio.post<T>(path, data: data, options: options));
 
+  Future<Response<T>> put<T>(
+    String path, {
+    dynamic data,
+    Options? options,
+  }) =>
+      _request(() => _dio.put<T>(path, data: data, options: options));
+
   Future<Response<T>> patch<T>(
     String path, {
     dynamic data,

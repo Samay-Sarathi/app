@@ -54,6 +54,14 @@ class _NavigationScreenState extends State<NavigationScreen> {
   // Green corridor state
   bool _corridorActive = false;
 
+  // Proximity arrival
+  bool _isNearHospital = false;
+  static const double _arrivalRadiusMeters = 500;
+
+  // Trip cancellation banner
+  bool _showCancelBanner = false;
+  int _cancelCountdown = 3;
+
   @override
   void initState() {
     super.initState();
@@ -199,6 +207,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
 
       if (isMoving) {
         _updateCurrentStep(newLocation);
+        _checkProximity(newLocation);
         if (_isFollowingUser && _mapController != null) {
           _mapController!.animateCamera(CameraUpdate.newCameraPosition(
             CameraPosition(target: newLocation, zoom: 17.5, tilt: 55, bearing: _currentHeading)));
@@ -231,6 +240,16 @@ class _NavigationScreenState extends State<NavigationScreen> {
     setState(() { _remainingDistanceMeters = remainingDist; _remainingDurationSeconds = remainingTime; });
   }
 
+  void _checkProximity(LatLng pos) {
+    final hospitalLoc = _getHospitalLocation();
+    if (hospitalLoc == null) return;
+    final distance = NavigationHelpers.haversineDistance(pos, hospitalLoc);
+    final near = distance <= _arrivalRadiusMeters;
+    if (near != _isNearHospital) {
+      setState(() => _isNearHospital = near);
+    }
+  }
+
   // ── WebSocket Trip Status ──
 
   void _subscribeToTripStatus() {
@@ -245,9 +264,74 @@ class _NavigationScreenState extends State<NavigationScreen> {
       if (status == 'EN_ROUTE' && !_corridorActive) {
         setState(() => _corridorActive = true);
       }
+      // Trip cancelled — show banner and auto-navigate
+      if (status == 'CANCELLED') {
+        _showCancellationBanner();
+      }
+      // Hospital rejected — trip reverted to TRIAGE
+      if (status == 'TRIAGE') {
+        _handleHospitalRejection(data['reason'] as String?);
+      }
       debugPrint('Trip status update via WS: $status');
       context.read<TripProvider>().refreshTrip();
     });
+  }
+
+  void _showCancellationBanner() {
+    if (_showCancelBanner) return;
+    setState(() {
+      _showCancelBanner = true;
+      _cancelCountdown = 3;
+    });
+    _tickCancelCountdown();
+  }
+
+  Future<void> _tickCancelCountdown() async {
+    for (int i = 3; i > 0; i--) {
+      if (!mounted || !_showCancelBanner) return;
+      setState(() => _cancelCountdown = i);
+      await Future.delayed(const Duration(seconds: 1));
+    }
+    if (mounted) {
+      context.read<TripProvider>().clearTrip();
+      GoRouter.of(context).go('/driver/dashboard');
+    }
+  }
+
+  void _handleHospitalRejection(String? reason) {
+    final tp = context.read<TripProvider>();
+    tp.clearHospitalLock();
+    tp.fetchRecommendations();
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            const Icon(Icons.warning_amber_rounded, color: AppColors.emergencyRed),
+            const SizedBox(width: 10),
+            const Expanded(child: Text('Hospital Rejected')),
+          ],
+        ),
+        content: Text(reason ?? 'The hospital has rejected your request. Please select another hospital.'),
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.lifelineGreen,
+              foregroundColor: AppColors.white,
+              shape: const StadiumBorder(),
+            ),
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              GoRouter.of(context).go('/driver/hospital-select');
+            },
+            child: const Text('View Alternatives'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -376,6 +460,41 @@ class _NavigationScreenState extends State<NavigationScreen> {
             ),
           ),
 
+          // ── Trip Cancelled Banner ──
+          if (_showCancelBanner)
+            Positioned(
+              top: 0, left: 0, right: 0, bottom: 0,
+              child: Container(
+                color: Colors.black54,
+                child: Center(
+                  child: Container(
+                    margin: const EdgeInsets.all(32),
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: AppColors.emergencyRed,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.cancel, size: 48, color: AppColors.white),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'TRIP CANCELLED',
+                          style: TextStyle(color: AppColors.white, fontSize: 24, fontWeight: FontWeight.w800),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Redirecting in $_cancelCountdown...',
+                          style: const TextStyle(color: AppColors.white, fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
           // ── Draggable bottom sheet ──
           NavBottomSheet(
             remainingDurationSeconds: _remainingDurationSeconds,
@@ -391,7 +510,9 @@ class _NavigationScreenState extends State<NavigationScreen> {
               )),
               const SizedBox(width: 10),
               Expanded(child: MapActionButton(
-                icon: Icons.flag, label: 'End Trip', color: AppColors.warmOrange,
+                icon: _isNearHospital ? Icons.check_circle : Icons.flag,
+                label: _isNearHospital ? 'Arrive' : 'End Trip',
+                color: _isNearHospital ? AppColors.lifelineGreen : AppColors.warmOrange,
                 onTap: () => context.go('/driver/triage'),
               )),
               if (AppConfig.devMode) ...[

@@ -51,10 +51,9 @@ class SettingToggle extends StatelessWidget {
               ],
             ),
           ),
-          Switch(
+          Switch.adaptive(
             value: value,
             onChanged: onChanged,
-            activeTrackColor: AppColors.lifelineGreen,
           ),
         ],
       ),

@@ -7,7 +7,7 @@ class AppColors {
   static const Color lifelineGreen = Color(0xFF1AAE6F);
   static const Color emergencyRed = Color(0xFFE63946);
   static const Color medicalBlue = Color(0xFF3498DB);
-  static const Color commandDark = Color(0xFF1A1A2E);
+  static const Color commandDark = Color(0xFF000000);
 
   // ── Secondary ──
   static const Color warmOrange = Color(0xFFF4A261);
@@ -23,17 +23,17 @@ class AppColors {
   static const Color darkGray = Color(0xFF2D3748);
   static const Color black = Color(0xFF000000);
 
-  // ── Surface elevation (dark mode) ──
-  static const Color surface0 = Color(0xFF1A1A2E); // scaffold
-  static const Color surface1 = Color(0xFF16213E); // cards
-  static const Color surface2 = Color(0xFF1B2A4A); // raised elements
-  static const Color surface3 = Color(0xFF213555); // dialogs/modals
+  // ── Surface elevation (dark mode — warm tones, X/Instagram inspired) ──
+  static const Color surface0 = Color(0xFF000000); // scaffold (OLED black)
+  static const Color surface1 = Color(0xFF16181C); // cards
+  static const Color surface2 = Color(0xFF1D1F23); // raised elements
+  static const Color surface3 = Color(0xFF2C2F33); // dialogs/modals
 
   // ── Card tokens ──
   static const Color cardLight = Color(0xFFFFFFFF);
   static const Color cardBorderLight = Color(0x0A000000); // 4% black
-  static const Color cardDark = Color(0xFF1C2540);
-  static const Color cardBorderDark = Color(0x0DFFFFFF); // 5% white
+  static const Color cardDark = Color(0xFF16181C);
+  static const Color cardBorderDark = Color(0x14FFFFFF); // 8% white
 
   // ── Muted tints (for subtle backgrounds without visual noise) ──
   static const Color greenTint = Color(0x141AAE6F); // 8% green

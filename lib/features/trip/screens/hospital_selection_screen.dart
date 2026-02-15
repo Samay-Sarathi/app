@@ -104,6 +104,17 @@ class _HospitalSelectionScreenState extends State<HospitalSelectionScreen> {
             _ConfirmInfoRow(icon: Icons.bed, text: '${hospital.bedAvailable} beds available'),
             const SizedBox(height: 6),
             _ConfirmInfoRow(icon: Icons.route, text: '${hospital.distanceKm.toStringAsFixed(1)} km away'),
+            if (hospital.equipment.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 6,
+                runSpacing: 4,
+                children: hospital.equipment.entries
+                    .where((e) => e.value)
+                    .map((e) => _EquipmentChip(label: e.key))
+                    .toList(),
+              ),
+            ],
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(12),
@@ -127,19 +138,47 @@ class _HospitalSelectionScreenState extends State<HospitalSelectionScreen> {
             ),
           ],
         ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text('Cancel', style: AppTypography.bodyS.copyWith(color: AppColors.mediumGray)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.lifelineGreen,
-              foregroundColor: AppColors.white,
-              shape: const StadiumBorder(),
-            ),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Confirm & Navigate'),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.of(ctx).pop(false),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.mediumGray,
+                    shape: const StadiumBorder(),
+                    side: BorderSide(color: AppColors.mediumGray.withValues(alpha: 0.3)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  child: const Text('Cancel'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                flex: 2,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(colors: [AppColors.lifelineGreen, AppColors.greenDark]),
+                    borderRadius: BorderRadius.circular(100),
+                    boxShadow: [
+                      BoxShadow(color: AppColors.lifelineGreen.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 3)),
+                    ],
+                  ),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      foregroundColor: AppColors.white,
+                      shape: const StadiumBorder(),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    onPressed: () => Navigator.of(ctx).pop(true),
+                    child: const Text('Confirm & Navigate', style: TextStyle(fontWeight: FontWeight.w700)),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -426,6 +465,17 @@ class _HospitalDetailCard extends StatelessWidget {
               }).toList(),
             ),
           ],
+          if (recommendation.equipment.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: recommendation.equipment.entries
+                  .where((e) => e.value)
+                  .map((e) => _EquipmentChip(label: e.key))
+                  .toList(),
+            ),
+          ],
           const SizedBox(height: 20),
           PrimaryButton(
             label: isLoading ? 'Locking hospital...' : 'Select Hospital →',
@@ -452,6 +502,39 @@ class _InfoChip extends StatelessWidget {
         const SizedBox(width: 4),
         Text(label, style: AppTypography.bodyS.copyWith(color: AppColors.mediumGray)),
       ],
+    );
+  }
+}
+
+class _EquipmentChip extends StatelessWidget {
+  final String label;
+  const _EquipmentChip({required this.label});
+
+  static const _icons = <String, IconData>{
+    'CT': Icons.scanner,
+    'MRI': Icons.radio,
+    'Ventilator': Icons.air,
+    'ICU': Icons.monitor_heart,
+    'X-Ray': Icons.image,
+    'Ultrasound': Icons.waves,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.medicalBlue.withValues(alpha: 0.1),
+        borderRadius: AppSpacing.borderRadiusFull,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(_icons[label] ?? Icons.medical_services, size: 14, color: AppColors.medicalBlue),
+          const SizedBox(width: 4),
+          Text(label, style: AppTypography.caption.copyWith(color: AppColors.medicalBlue, fontWeight: FontWeight.w600)),
+        ],
+      ),
     );
   }
 }

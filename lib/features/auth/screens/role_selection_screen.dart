@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../shared/widgets/lifeline_logo.dart';
 
-class RoleSelectionScreen extends StatelessWidget {
+class RoleSelectionScreen extends StatefulWidget {
   const RoleSelectionScreen({super.key});
+
+  @override
+  State<RoleSelectionScreen> createState() => _RoleSelectionScreenState();
+}
+
+class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
+  String _selectedLanguage = 'English';
 
   @override
   Widget build(BuildContext context) {
@@ -18,12 +26,28 @@ class RoleSelectionScreen extends StatelessWidget {
           padding: const EdgeInsets.all(AppSpacing.spaceXl),
           child: Column(
             children: [
-              const SizedBox(height: 40),
-              const LifelineLogo(size: 72),
+              // QR Scanner button (top right)
+              Align(
+                alignment: Alignment.centerRight,
+                child: IconButton(
+                  onPressed: () => context.go('/helper/scan'),
+                  icon: const Icon(Icons.qr_code_scanner),
+                  tooltip: 'Scan QR to assist',
+                  color: AppColors.mediumGray,
+                ),
+              ),
+              const SizedBox(height: 16),
+              SvgPicture.asset(
+                'assets/icons/lifeline_logo.svg',
+                width: 96,
+                height: 96,
+              ),
               const SizedBox(height: 16),
               Text(
                 'LIFELINE',
-                style: AppTypography.heading2.copyWith(
+                style: GoogleFonts.poppins(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
                   letterSpacing: 3,
                   color: onSurface,
                 ),
@@ -32,6 +56,12 @@ class RoleSelectionScreen extends StatelessWidget {
               Text(
                 'Emergency Access Portal',
                 style: AppTypography.bodyS.copyWith(color: AppColors.mediumGray),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Every Second Counts \u2014 Emergency Response at Your Fingertips',
+                style: AppTypography.bodyS.copyWith(color: AppColors.mediumGray),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 48),
               Expanded(
@@ -42,16 +72,10 @@ class RoleSelectionScreen extends StatelessWidget {
                   childAspectRatio: 1.15,
                   children: [
                     _RoleCard(
-                      icon: Icons.local_shipping,
+                      svgAsset: 'assets/icons/icon_ambulance.svg',
                       label: 'Ambulance\nDriver',
                       color: AppColors.medicalBlue,
                       onTap: () => context.go('/sign-in', extra: 'driver'),
-                    ),
-                    _RoleCard(
-                      icon: Icons.medical_services,
-                      label: 'Paramedic',
-                      color: AppColors.hospitalTeal,
-                      onTap: () => context.go('/sign-in', extra: 'paramedic'),
                     ),
                     _RoleCard(
                       icon: Icons.local_hospital,
@@ -60,7 +84,7 @@ class RoleSelectionScreen extends StatelessWidget {
                       onTap: () => context.go('/sign-in', extra: 'hospital'),
                     ),
                     _RoleCard(
-                      icon: Icons.shield,
+                      svgAsset: 'assets/icons/icon_traffic_police.svg',
                       label: 'Traffic\nPolice',
                       color: AppColors.calmPurple,
                       onTap: () => context.go('/sign-in', extra: 'police'),
@@ -79,8 +103,19 @@ class RoleSelectionScreen extends StatelessWidget {
                 children: [
                   const Icon(Icons.language, size: 18, color: AppColors.mediumGray),
                   const SizedBox(width: 8),
-                  Text('English', style: AppTypography.bodyS.copyWith(color: AppColors.mediumGray)),
-                  const Icon(Icons.arrow_drop_down, color: AppColors.mediumGray),
+                  DropdownButton<String>(
+                    value: _selectedLanguage,
+                    underline: const SizedBox.shrink(),
+                    style: AppTypography.bodyS.copyWith(color: AppColors.mediumGray),
+                    dropdownColor: Theme.of(context).colorScheme.surface,
+                    items: const [
+                      DropdownMenuItem(value: 'English', child: Text('English')),
+                      DropdownMenuItem(value: 'Hindi', child: Text('Hindi')),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) setState(() => _selectedLanguage = value);
+                    },
+                  ),
                 ],
               ),
               const SizedBox(height: 8),
@@ -97,16 +132,22 @@ class RoleSelectionScreen extends StatelessWidget {
 }
 
 class _RoleCard extends StatelessWidget {
-  final IconData icon;
+  final IconData? icon;
+  final String? svgAsset;
   final String label;
   final Color color;
   final VoidCallback onTap;
+  final double iconSize;
+  final double containerSize;
 
   const _RoleCard({
-    required this.icon,
+    this.icon,
+    this.svgAsset,
     required this.label,
     required this.color,
     required this.onTap,
+    this.iconSize = 28,
+    this.containerSize = 56,
   });
 
   @override
@@ -130,13 +171,22 @@ class _RoleCard extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 56,
-              height: 56,
+              width: containerSize,
+              height: containerSize,
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: Icon(icon, size: 28, color: color),
+              child: Center(
+                child: svgAsset != null
+                    ? SvgPicture.asset(
+                        svgAsset!,
+                        width: iconSize,
+                        height: iconSize,
+                        colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+                      )
+                    : Icon(icon, size: iconSize, color: color),
+              ),
             ),
             const SizedBox(height: 12),
             Text(

@@ -18,6 +18,11 @@ class TripProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
 
+  // Driver stats
+  int _tripsToday = 0;
+  int _avgResponseTimeMinutes = 0;
+  double _distanceCoveredKm = 0.0;
+
   TripProvider([TripService? tripService])
       : _tripService = tripService ?? TripService();
 
@@ -31,6 +36,9 @@ class TripProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
   bool get hasActiveTrip => _activeTrip != null && _activeTrip!.status.isActive;
+  int get tripsToday => _tripsToday;
+  int get avgResponseTimeMinutes => _avgResponseTimeMinutes;
+  double get distanceCoveredKm => _distanceCoveredKm;
 
   // ── Actions ──
 
@@ -211,6 +219,36 @@ class TripProvider extends ChangeNotifier {
     }
   }
 
+  /// Mark the active trip as arrived at hospital.
+  Future<bool> arriveAtHospital({String? notes, double? latitude, double? longitude}) async {
+    if (_activeTrip == null) return false;
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      _activeTrip = await _tripService.markArrived(
+        _activeTrip!.id,
+        notes: notes,
+        latitude: latitude,
+        longitude: longitude,
+      );
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } on ApiException catch (e) {
+      _error = e.message;
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _error = 'Failed to confirm arrival.';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   /// Cancel the active trip.
   Future<bool> cancelTrip({String? reason}) async {
     if (_activeTrip == null) return false;
@@ -219,7 +257,13 @@ class TripProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _activeTrip = await _tripService.cancelTrip(_activeTrip!.id, reason: reason);
+      await _tripService.cancelTrip(_activeTrip!.id, reason: reason);
+      // Clear trip state — trip is terminal, no longer active
+      _activeTrip = null;
+      _recommendations = [];
+      _handshakeResult = null;
+      _selectedHospitalLat = null;
+      _selectedHospitalLng = null;
       _isLoading = false;
       notifyListeners();
       return true;
@@ -256,6 +300,14 @@ class TripProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Reset hospital-specific state (used when hospital rejects).
+  void clearHospitalLock() {
+    _handshakeResult = null;
+    _selectedHospitalLat = null;
+    _selectedHospitalLng = null;
+    notifyListeners();
+  }
+
   /// Link paramedic via scanned QR token.
   Future<Map<String, dynamic>?> linkParamedic(String paramedicToken) async {
     _isLoading = true;
@@ -281,6 +333,19 @@ class TripProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
       return null;
+    }
+  }
+
+  /// Fetch driver dashboard stats from the backend.
+  Future<void> fetchDriverStats() async {
+    try {
+      final data = await _tripService.getDriverStats();
+      _tripsToday = data['tripsToday'] as int? ?? 0;
+      _avgResponseTimeMinutes = data['avgResponseTimeMinutes'] as int? ?? 0;
+      _distanceCoveredKm = (data['distanceCoveredKm'] as num?)?.toDouble() ?? 0.0;
+      notifyListeners();
+    } catch (_) {
+      // Stats are non-critical — silently ignore failures
     }
   }
 

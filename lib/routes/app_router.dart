@@ -14,9 +14,9 @@ import '../features/trip/screens/hospital_selection_screen.dart';
 import '../features/trip/screens/navigation_screen.dart';
 import '../features/trip/screens/triage_sync_screen.dart';
 import '../features/hospital/screens/emergency_alert_screen.dart';
-import '../features/paramedic/paramedic_dashboard_screen.dart';
-import '../features/paramedic/screens/qr_scan_screen.dart';
 import '../features/hospital/screens/ambulance_sync_screen.dart';
+import '../features/helper/helper_scan_screen.dart';
+import '../features/helper/helper_triage_screen.dart';
 import '../features/hospital/hospital_dashboard_screen.dart';
 import '../features/admin/admin_dashboard_screen.dart';
 import '../features/police/police_dashboard_screen.dart';
@@ -24,7 +24,7 @@ import '../shared/screens/about_screen.dart';
 import '../shared/screens/terms_screen.dart';
 
 /// Routes that don't require authentication.
-const _publicPaths = {'/', '/roles', '/sign-in', '/register', '/about', '/terms'};
+const _publicPaths = {'/', '/roles', '/sign-in', '/register', '/about', '/terms', '/helper/scan', '/helper/triage'};
 
 /// Allowed route prefixes per role.
 const _roleRoutes = <UserRole, List<String>>{
@@ -32,7 +32,6 @@ const _roleRoutes = <UserRole, List<String>>{
   UserRole.hospital: ['/hospital/'],
   UserRole.police: ['/police/'],
   UserRole.admin: ['/admin/'],
-  UserRole.paramedic: ['/paramedic/', '/driver/'],
 };
 
 class AppRouter {
@@ -148,14 +147,21 @@ class AppRouter {
         builder: (context, state) => const PoliceDashboardScreen(),
       ),
 
-      // Paramedic routes
+      // Helper routes (public, no auth)
       GoRoute(
-        path: '/paramedic/dashboard',
-        builder: (context, state) => const ParamedicDashboardScreen(),
+        path: '/helper/scan',
+        builder: (context, state) => const HelperScanScreen(),
       ),
       GoRoute(
-        path: '/paramedic/qr-scan',
-        builder: (context, state) => const QrScanScreen(),
+        path: '/helper/triage',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          return HelperTriageScreen(
+            sessionToken: extra['sessionToken'] as String? ?? '',
+            tripId: extra['tripId'] as String? ?? '',
+            hospitalName: extra['hospitalName'] as String?,
+          );
+        },
       ),
 
       // Shared screens

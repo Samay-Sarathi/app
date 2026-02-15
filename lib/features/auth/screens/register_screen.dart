@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +8,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/models/user_role.dart';
+import '../../../core/services/document_service.dart';
 import '../../../shared/widgets/buttons.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -30,17 +32,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscureConfirm = true;
 
   // ── Optional role-specific fields (UI only, stored later) ──
+  final _documentService = DocumentService();
   // Driver
   final _ambulanceNumberController = TextEditingController();
   String? _govtIdFileName;
+  PlatformFile? _govtIdFile;
   // Hospital
   final _hospitalNameController = TextEditingController();
   final _hospitalNumberController = TextEditingController();
   String? _hospitalProofFileName;
+  PlatformFile? _hospitalProofFile;
   // Police
   final _deptNameController = TextEditingController();
   final _areaNameController = TextEditingController();
   String? _policeIdFileName;
+  PlatformFile? _policeIdFile;
 
   @override
   void dispose() {
@@ -98,29 +104,47 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return 'Full Name';
   }
 
-  // ── File upload simulation ──
+  // ── File picker ──
 
   Future<void> _pickDocument(String fieldName) async {
-    // TODO: Integrate file_picker package for real document upload
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+    );
+
+    if (result == null || result.files.isEmpty) return;
+    final file = result.files.first;
+
     setState(() {
       if (fieldName == 'govtId') {
-        _govtIdFileName = 'govt_id_document.pdf';
+        _govtIdFileName = file.name;
+        _govtIdFile = file;
       } else if (fieldName == 'hospitalProof') {
-        _hospitalProofFileName = 'hospital_proof.pdf';
+        _hospitalProofFileName = file.name;
+        _hospitalProofFile = file;
       } else if (fieldName == 'policeId') {
-        _policeIdFileName = 'police_id.pdf';
+        _policeIdFileName = file.name;
+        _policeIdFile = file;
       }
     });
+  }
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Document selected (upload will be available soon)'),
-          backgroundColor: _roleColor,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: AppSpacing.borderRadiusSm),
-        ),
-      );
+  Future<void> _uploadPendingDocuments() async {
+    final filesToUpload = <(PlatformFile, String)>[];
+    if (_govtIdFile?.path != null) filesToUpload.add((_govtIdFile!, 'GOVT_ID'));
+    if (_hospitalProofFile?.path != null) filesToUpload.add((_hospitalProofFile!, 'HOSPITAL_PROOF'));
+    if (_policeIdFile?.path != null) filesToUpload.add((_policeIdFile!, 'POLICE_ID'));
+
+    for (final (file, docType) in filesToUpload) {
+      try {
+        await _documentService.uploadDocument(
+          filePath: file.path!,
+          fileName: file.name,
+          documentType: docType,
+        );
+      } catch (_) {
+        // Non-critical — documents can be re-uploaded later
+      }
     }
   }
 
@@ -149,6 +173,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!mounted) return;
 
     if (success) {
+      // Upload any selected documents in the background
+      await _uploadPendingDocuments();
+      if (!mounted) return;
       router.go(auth.dashboardRoute);
     } else {
       messenger.showSnackBar(

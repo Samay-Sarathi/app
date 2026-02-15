@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/navigation_helpers.dart';
@@ -41,9 +42,13 @@ class NavBottomSheet extends StatelessWidget {
       snapSizes: const [0.25, 0.40],
       snap: true,
       builder: (context, scrollController) {
-        return Container(
+        return ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: Container(
           decoration: BoxDecoration(
-            color: surface,
+            color: surface.withValues(alpha: 0.85),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             boxShadow: [
               BoxShadow(
@@ -147,6 +152,8 @@ class NavBottomSheet extends StatelessWidget {
 
               const SizedBox(height: 8),
             ],
+          ),
+            ),
           ),
         );
       },

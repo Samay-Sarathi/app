@@ -80,23 +80,29 @@ class AppTheme {
       ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return AppColors.lifelineGreen;
+          if (states.contains(WidgetState.selected)) return AppColors.white;
           return AppColors.mediumGray;
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return AppColors.greenTint;
+          if (states.contains(WidgetState.selected)) return AppColors.lifelineGreen;
           return AppColors.lightGray;
         }),
-        trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
+        trackOutlineColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return Colors.transparent;
+          return AppColors.mediumGray.withValues(alpha: 0.3);
+        }),
       ),
     );
   }
+
+  // Off-white text for dark mode (not pure white — reduces eye strain, like X)
+  static const _darkOnSurface = Color(0xFFE7E9EA);
 
   static ThemeData get darkTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      scaffoldBackgroundColor: AppColors.commandDark,
+      scaffoldBackgroundColor: AppColors.surface0,
       colorScheme: const ColorScheme.dark(
         primary: AppColors.successDark,
         secondary: AppColors.infoDark,
@@ -105,12 +111,12 @@ class AppTheme {
         onPrimary: AppColors.white,
         onSecondary: AppColors.white,
         onError: AppColors.white,
-        onSurface: AppColors.white,
+        onSurface: _darkOnSurface,
       ),
       textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
       appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.commandDark,
-        foregroundColor: AppColors.white,
+        backgroundColor: AppColors.surface0,
+        foregroundColor: _darkOnSurface,
         elevation: 0,
       ),
       cardTheme: CardThemeData(
@@ -124,11 +130,11 @@ class AppTheme {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.darkGray, width: 1.5),
+          borderSide: BorderSide(color: AppColors.white.withValues(alpha: 0.08), width: 1.5),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.darkGray, width: 1.5),
+          borderSide: BorderSide(color: AppColors.white.withValues(alpha: 0.08), width: 1.5),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
@@ -147,15 +153,15 @@ class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.white,
+          foregroundColor: _darkOnSurface,
           minimumSize: const Size(double.infinity, 48),
           shape: const StadiumBorder(),
-          side: BorderSide(color: AppColors.white.withValues(alpha: 0.3)),
+          side: BorderSide(color: AppColors.white.withValues(alpha: 0.15)),
         ),
       ),
       dialogTheme: DialogThemeData(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        backgroundColor: AppColors.surface1,
+        backgroundColor: AppColors.surface3,
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
@@ -165,14 +171,17 @@ class AppTheme {
       ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return AppColors.successDark;
+          if (states.contains(WidgetState.selected)) return AppColors.white;
           return AppColors.mediumGray;
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return AppColors.greenTint;
+          if (states.contains(WidgetState.selected)) return AppColors.lifelineGreen;
           return AppColors.surface2;
         }),
-        trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
+        trackOutlineColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return Colors.transparent;
+          return AppColors.white.withValues(alpha: 0.15);
+        }),
       ),
     );
   }
