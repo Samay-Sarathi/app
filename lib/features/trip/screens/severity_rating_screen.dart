@@ -108,20 +108,7 @@ class _SeverityRatingScreenState extends State<SeverityRatingScreen> {
       return;
     }
 
-    // Step 2: Fetch recommendations
-    final fetched = await tripProvider.fetchRecommendations();
-    if (!mounted) return;
-
-    if (!fetched) {
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(tripProvider.error ?? 'Failed to get recommendations'),
-          backgroundColor: AppColors.emergencyRed,
-        ),
-      );
-      // Still navigate — screen will show empty/error state
-    }
-
+    // Navigate immediately — hospital selection screen fetches recommendations
     nav.go('/driver/hospital-select');
   }
 

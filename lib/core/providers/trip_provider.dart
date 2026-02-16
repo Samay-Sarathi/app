@@ -19,6 +19,7 @@ class TripProvider extends ChangeNotifier {
   String? _error;
 
   // Driver stats
+  bool _isLoadingStats = false;
   int _tripsToday = 0;
   int _avgResponseTimeMinutes = 0;
   double _distanceCoveredKm = 0.0;
@@ -36,6 +37,7 @@ class TripProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
   bool get hasActiveTrip => _activeTrip != null && _activeTrip!.status.isActive;
+  bool get isLoadingStats => _isLoadingStats;
   int get tripsToday => _tripsToday;
   int get avgResponseTimeMinutes => _avgResponseTimeMinutes;
   double get distanceCoveredKm => _distanceCoveredKm;
@@ -338,14 +340,18 @@ class TripProvider extends ChangeNotifier {
 
   /// Fetch driver dashboard stats from the backend.
   Future<void> fetchDriverStats() async {
+    _isLoadingStats = true;
+    notifyListeners();
     try {
       final data = await _tripService.getDriverStats();
       _tripsToday = data['tripsToday'] as int? ?? 0;
       _avgResponseTimeMinutes = data['avgResponseTimeMinutes'] as int? ?? 0;
       _distanceCoveredKm = (data['distanceCoveredKm'] as num?)?.toDouble() ?? 0.0;
-      notifyListeners();
     } catch (_) {
       // Stats are non-critical — silently ignore failures
+    } finally {
+      _isLoadingStats = false;
+      notifyListeners();
     }
   }
 

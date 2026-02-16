@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/models/trip.dart';
 import '../../../core/providers/hospital_provider.dart';
 import '../../../core/services/websocket_service.dart';
 import '../../../core/utils/navigation_helpers.dart';
@@ -20,7 +22,9 @@ class IncomingTab extends StatefulWidget {
 class _IncomingTabState extends State<IncomingTab> {
   final Set<String> _acceptedTrips = {};
   final Set<String> _declinedTrips = {};
+  final Set<String> _receivingTrips = {};
   final Map<String, String> _declineReasons = {};
+  bool _hasLoadedOnce = false;
 
   // Real-time ambulance locations from WebSocket
   final Map<String, LatLng> _ambulanceLocations = {};
@@ -403,11 +407,73 @@ class _IncomingTabState extends State<IncomingTab> {
     }
   }
 
+  Widget _buildSkeletonTripCard() {
+    final trip = Trip.dummy();
+    final cardColor = Theme.of(context).colorScheme.surface;
+    final sevColor = AppColors.warmOrange;
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: AppSpacing.borderRadiusLg,
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(color: sevColor.withValues(alpha: 0.15)),
+            child: Row(
+              children: [
+                Container(width: 28, height: 28, decoration: BoxDecoration(color: sevColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8))),
+                const SizedBox(width: 10),
+                Text(trip.incidentType.label, style: AppTypography.bodyS),
+                const Spacer(),
+                Text('SEV ${trip.severity}', style: AppTypography.overline),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: [
+                  const Icon(Icons.person, size: 15),
+                  const SizedBox(width: 8),
+                  Text('Driver: ${trip.driverName}', style: AppTypography.bodyS),
+                ]),
+                const SizedBox(height: 6),
+                Row(children: [
+                  const Icon(Icons.confirmation_number, size: 15),
+                  const SizedBox(width: 8),
+                  Text('Trip: ${trip.id.substring(0, 8)}...', style: AppTypography.caption),
+                ]),
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.lifelineGreen.withValues(alpha: 0.1),
+                    borderRadius: AppSpacing.borderRadiusSm,
+                  ),
+                  child: const Center(child: Text('Review & Respond')),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final onSurface = Theme.of(context).colorScheme.onSurface;
     final cardColor = Theme.of(context).colorScheme.surface;
     final hp = context.watch<HospitalProvider>();
+
+    // Mark first load complete once provider finishes loading
+    if (!hp.isLoading && !_hasLoadedOnce) _hasLoadedOnce = true;
 
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.spaceMd),
@@ -427,18 +493,34 @@ class _IncomingTabState extends State<IncomingTab> {
                 ],
               ),
               GestureDetector(
-                onTap: () => hp.fetchIncomingTrips(),
+                onTap: hp.isLoading ? null : () {
+                  _hasLoadedOnce = true;
+                  hp.fetchIncomingTrips();
+                },
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(color: AppColors.medicalBlue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
-                  child: const Icon(Icons.refresh, color: AppColors.medicalBlue, size: 20),
+                  child: hp.isLoading && _hasLoadedOnce
+                      ? const SizedBox(
+                          width: 20, height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.medicalBlue),
+                        )
+                      : const Icon(Icons.refresh, color: AppColors.medicalBlue, size: 20),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          if (hp.isLoading)
-            const Expanded(child: Center(child: CircularProgressIndicator()))
+          if (hp.isLoading && !_hasLoadedOnce)
+            Expanded(
+              child: Skeletonizer(
+                child: ListView.separated(
+                  itemCount: 2,
+                  separatorBuilder: (_, _) => const SizedBox(height: 12),
+                  itemBuilder: (_, _) => _buildSkeletonTripCard(),
+                ),
+              ),
+            )
           else if (hp.incomingTrips.isEmpty)
             Expanded(
               child: Center(
@@ -627,14 +709,16 @@ class _IncomingTabState extends State<IncomingTab> {
           Expanded(child: Text('Accepted — Preparing Bay',
               style: AppTypography.bodyS.copyWith(color: AppColors.lifelineGreen, fontWeight: FontWeight.w600))),
           GestureDetector(
-            onTap: isInRange
+            onTap: (isInRange && !_receivingTrips.contains(trip.id))
                 ? () async {
+                    setState(() => _receivingTrips.add(trip.id));
                     await hp.confirmArrival(trip.id);
                     if (context.mounted) await hp.completeTrip(trip.id);
+                    if (mounted) setState(() => _receivingTrips.remove(trip.id));
                   }
                 : null,
             child: AnimatedOpacity(
-              opacity: isInRange ? 1.0 : 0.35,
+              opacity: (isInRange && !_receivingTrips.contains(trip.id)) ? 1.0 : 0.35,
               duration: const Duration(milliseconds: 200),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

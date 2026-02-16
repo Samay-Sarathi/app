@@ -36,13 +36,13 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                   color: AppColors.mediumGray,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
               SvgPicture.asset(
                 'assets/icons/lifeline_logo.svg',
-                width: 96,
-                height: 96,
+                width: 72,
+                height: 72,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               Text(
                 'LIFELINE',
                 style: GoogleFonts.poppins(
@@ -63,13 +63,14 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                 style: AppTypography.bodyS.copyWith(color: AppColors.mediumGray),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 48),
+              const SizedBox(height: 24),
               Expanded(
                 child: GridView.count(
                   crossAxisCount: 2,
-                  mainAxisSpacing: 16,
-                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
                   childAspectRatio: 1.15,
+                  physics: const NeverScrollableScrollPhysics(),
                   children: [
                     _RoleCard(
                       svgAsset: 'assets/icons/icon_ambulance.svg',

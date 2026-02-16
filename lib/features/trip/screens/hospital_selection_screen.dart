@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
@@ -57,9 +58,14 @@ class _HospitalSelectionScreenState extends State<HospitalSelectionScreen> {
   @override
   void initState() {
     super.initState();
-    // Default select the recommended hospital
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final recs = context.read<TripProvider>().recommendations;
+      final tripProvider = context.read<TripProvider>();
+      // Fetch recommendations if not already loaded
+      if (tripProvider.recommendations.isEmpty && !tripProvider.isLoading) {
+        tripProvider.fetchRecommendations();
+      }
+      // Default select the recommended hospital
+      final recs = tripProvider.recommendations;
       final idx = recs.indexWhere((r) => r.isRecommended);
       if (idx >= 0) setState(() => _selectedIndex = idx);
     });
@@ -242,7 +248,9 @@ class _HospitalSelectionScreenState extends State<HospitalSelectionScreen> {
                     child: Text(
                       hasRecs
                           ? '$totalBeds Available ER Beds'
-                          : 'Loading hospitals...',
+                          : tripProvider.isLoading
+                              ? 'Finding nearby hospitals...'
+                              : tripProvider.error ?? 'No hospitals found',
                       style: AppTypography.bodyS.copyWith(fontWeight: FontWeight.w600, color: onSurface),
                     ),
                   ),
@@ -322,6 +330,16 @@ class _HospitalSelectionScreenState extends State<HospitalSelectionScreen> {
               currentIndex: _selectedIndex,
               totalCount: recommendations.length,
             )
+          else if (tripProvider.isLoading)
+            Skeletonizer(
+              child: _HospitalDetailCard(
+                recommendation: HospitalRecommendation.dummy(),
+                isLoading: false,
+                onSelect: () {},
+                currentIndex: 0,
+                totalCount: 3,
+              ),
+            )
           else
             Container(
               width: double.infinity,
@@ -332,19 +350,15 @@ class _HospitalSelectionScreenState extends State<HospitalSelectionScreen> {
               ),
               child: Column(
                 children: [
-                  if (tripProvider.isLoading)
-                    const CircularProgressIndicator()
-                  else ...[
-                    Text(
-                      'No hospitals found',
-                      style: AppTypography.heading3.copyWith(color: onSurface),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      tripProvider.error ?? 'Try again later',
-                      style: AppTypography.bodyS.copyWith(color: AppColors.mediumGray),
-                    ),
-                  ],
+                  Text(
+                    'No hospitals found',
+                    style: AppTypography.heading3.copyWith(color: onSurface),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    tripProvider.error ?? 'Try again later',
+                    style: AppTypography.bodyS.copyWith(color: AppColors.mediumGray),
+                  ),
                 ],
               ),
             ),

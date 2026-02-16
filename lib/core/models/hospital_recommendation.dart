@@ -31,6 +31,23 @@ class HospitalRecommendation {
     this.equipment = const {},
   });
 
+  /// Placeholder instance for skeleton loading (Skeletonizer).
+  factory HospitalRecommendation.dummy() => const HospitalRecommendation(
+        hospitalId: '00000000-0000-0000-0000-000000000000',
+        hospitalName: 'Loading hospital name...',
+        distanceKm: 4.2,
+        etaMinutes: 8,
+        bedAvailable: 5,
+        chaosScore: 30,
+        specialties: ['Emergency', 'Cardiology'],
+        score: 85,
+        scoreBreakdown: {},
+        isRecommended: true,
+        latitude: 0,
+        longitude: 0,
+        equipment: {'CT': true, 'MRI': true, 'Ventilator': true},
+      );
+
   factory HospitalRecommendation.fromJson(Map<String, dynamic> json) {
     return HospitalRecommendation(
       hospitalId: json['hospitalId'] as String,

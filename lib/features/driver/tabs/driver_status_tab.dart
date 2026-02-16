@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
@@ -129,35 +130,38 @@ class _DriverStatusTabState extends State<DriverStatusTab> {
           const SizedBox(height: 12),
 
           // Driver stats — API-driven
-          Row(
-            children: [
-              Expanded(
-                child: StatCard(
-                  value: '${tripProvider.tripsToday}',
-                  label: 'Trips Today',
-                  color: AppColors.lifelineGreen,
-                  icon: Icons.local_hospital,
+          Skeletonizer(
+            enabled: tripProvider.isLoadingStats,
+            child: Row(
+              children: [
+                Expanded(
+                  child: StatCard(
+                    value: '${tripProvider.tripsToday}',
+                    label: 'Trips Today',
+                    color: AppColors.lifelineGreen,
+                    icon: Icons.local_hospital,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: StatCard(
-                  value: '${tripProvider.avgResponseTimeMinutes}m',
-                  label: 'Avg Response',
-                  color: AppColors.warmOrange,
-                  icon: Icons.timer,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: StatCard(
+                    value: '${tripProvider.avgResponseTimeMinutes}m',
+                    label: 'Avg Response',
+                    color: AppColors.warmOrange,
+                    icon: Icons.timer,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: StatCard(
-                  value: '${tripProvider.distanceCoveredKm.toStringAsFixed(1)}km',
-                  label: 'Distance',
-                  color: AppColors.medicalBlue,
-                  icon: Icons.route,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: StatCard(
+                    value: '${tripProvider.distanceCoveredKm.toStringAsFixed(1)}km',
+                    label: 'Distance',
+                    color: AppColors.medicalBlue,
+                    icon: Icons.route,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           const Spacer(),
 

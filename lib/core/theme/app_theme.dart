@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'app_colors.dart';
 
 class AppTheme {
@@ -92,6 +93,21 @@ class AppTheme {
           return AppColors.mediumGray.withValues(alpha: 0.3);
         }),
       ),
+      extensions: const [
+        SkeletonizerConfigData(
+          effect: ShimmerEffect(
+            baseColor: AppColors.lightGray,
+            highlightColor: AppColors.white,
+            duration: Duration(milliseconds: 1500),
+          ),
+          enableSwitchAnimation: true,
+          switchAnimationConfig: SwitchAnimationConfig(
+            duration: Duration(milliseconds: 300),
+            switchInCurve: Curves.easeOut,
+            switchOutCurve: Curves.easeIn,
+          ),
+        ),
+      ],
     );
   }
 
@@ -183,6 +199,21 @@ class AppTheme {
           return AppColors.white.withValues(alpha: 0.15);
         }),
       ),
+      extensions: const [
+        SkeletonizerConfigData(
+          effect: ShimmerEffect(
+            baseColor: AppColors.surface2,
+            highlightColor: AppColors.surface3,
+            duration: Duration(milliseconds: 1500),
+          ),
+          enableSwitchAnimation: true,
+          switchAnimationConfig: SwitchAnimationConfig(
+            duration: Duration(milliseconds: 300),
+            switchInCurve: Curves.easeOut,
+            switchOutCurve: Curves.easeIn,
+          ),
+        ),
+      ],
     );
   }
 }

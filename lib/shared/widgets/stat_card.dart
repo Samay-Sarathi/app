@@ -9,6 +9,7 @@ class StatCard extends StatelessWidget {
   final String label;
   final Color color;
   final IconData icon;
+  final bool compact;
 
   const StatCard({
     super.key,
@@ -16,6 +17,7 @@ class StatCard extends StatelessWidget {
     required this.label,
     required this.color,
     required this.icon,
+    this.compact = false,
   });
 
   @override
@@ -24,7 +26,10 @@ class StatCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.spaceMd),
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 10 : AppSpacing.spaceMd,
+        vertical: compact ? 10 : AppSpacing.spaceMd,
+      ),
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: AppSpacing.borderRadiusCard,
@@ -35,9 +40,9 @@ class StatCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Icon(icon, size: 22, color: color),
-          const SizedBox(height: 4),
-          Text(value, style: AppTypography.heading3.copyWith(color: color)),
+          Icon(icon, size: compact ? 18 : 22, color: color),
+          SizedBox(height: compact ? 2 : 4),
+          Text(value, style: AppTypography.heading3.copyWith(color: color, fontSize: compact ? 16 : null)),
           Text(label, style: AppTypography.caption.copyWith(color: AppColors.mediumGray, fontSize: 9)),
         ],
       ),

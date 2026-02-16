@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -13,7 +14,8 @@ import '../../../shared/widgets/status_badge.dart';
 class PoliceActiveTab extends StatelessWidget {
   final List<Trip> trips;
   final int corridorCount;
-  final bool isLoading;
+  final bool isLoading; // true only for first load (skeleton)
+  final bool isRefreshing; // true during subsequent refreshes (spinner)
   final String? error;
   final VoidCallback onRefresh;
   final ValueChanged<Trip> onTrackTrip;
@@ -23,6 +25,7 @@ class PoliceActiveTab extends StatelessWidget {
     required this.trips,
     required this.corridorCount,
     required this.isLoading,
+    this.isRefreshing = false,
     this.error,
     required this.onRefresh,
     required this.onTrackTrip,
@@ -49,26 +52,29 @@ class PoliceActiveTab extends StatelessWidget {
           const SizedBox(height: 20),
 
           // Stats row
-          Row(
-            children: [
-              Expanded(
-                child: StatCard(
-                  value: '${trips.length}',
-                  label: 'Active Trips',
-                  color: AppColors.emergencyRed,
-                  icon: Icons.local_shipping,
+          Skeletonizer(
+            enabled: isLoading,
+            child: Row(
+              children: [
+                Expanded(
+                  child: StatCard(
+                    value: '${trips.length}',
+                    label: 'Active Trips',
+                    color: AppColors.emergencyRed,
+                    icon: Icons.local_shipping,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: StatCard(
-                  value: '$corridorCount',
-                  label: 'Corridors',
-                  color: AppColors.lifelineGreen,
-                  icon: Icons.traffic,
+                const SizedBox(width: 10),
+                Expanded(
+                  child: StatCard(
+                    value: '$corridorCount',
+                    label: 'Corridors',
+                    color: AppColors.lifelineGreen,
+                    icon: Icons.traffic,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           const SizedBox(height: 20),
 
@@ -80,21 +86,27 @@ class PoliceActiveTab extends StatelessWidget {
                 'ACTIVE AMBULANCE TRIPS',
                 style: AppTypography.overline.copyWith(color: AppColors.mediumGray, letterSpacing: 1.5),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.emergencyRed.withValues(alpha: 0.1),
-                  borderRadius: AppSpacing.borderRadiusFull,
+              if (isRefreshing)
+                const SizedBox(
+                  width: 16, height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.medicalBlue),
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.emergencyRed.withValues(alpha: 0.1),
+                    borderRadius: AppSpacing.borderRadiusFull,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(width: 6, height: 6, decoration: const BoxDecoration(color: AppColors.emergencyRed, shape: BoxShape.circle)),
+                      const SizedBox(width: 6),
+                      Text('${trips.length} Active', style: AppTypography.overline.copyWith(color: AppColors.emergencyRed)),
+                    ],
+                  ),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(width: 6, height: 6, decoration: const BoxDecoration(color: AppColors.emergencyRed, shape: BoxShape.circle)),
-                    const SizedBox(width: 6),
-                    Text('${trips.length} Active', style: AppTypography.overline.copyWith(color: AppColors.emergencyRed)),
-                  ],
-                ),
-              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -102,7 +114,13 @@ class PoliceActiveTab extends StatelessWidget {
           // Trip cards
           Expanded(
             child: isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? Skeletonizer(
+                    child: ListView.separated(
+                      itemCount: 3,
+                      separatorBuilder: (_, _) => const SizedBox(height: 12),
+                      itemBuilder: (_, _) => _ActiveTripCard(trip: Trip.dummy(), onTap: () {}),
+                    ),
+                  )
                 : error != null
                     ? Center(
                         child: Column(

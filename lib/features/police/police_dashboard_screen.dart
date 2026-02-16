@@ -22,8 +22,13 @@ class _PoliceDashboardScreenState extends State<PoliceDashboardScreen> {
   List<Trip> _activeTrips = [];
   List<Trip> _activeCorridors = [];
   List<Map<String, dynamic>> _alerts = [];
-  bool _isLoading = true;
+  bool _isFirstLoad = true; // true until first successful fetch
+  bool _isFetching = false; // network request in flight (re-entry guard)
   String? _error;
+
+  /// True only for the very first load (show skeleton).
+  /// After first load, refreshes keep showing existing data.
+  bool get _isLoading => _isFirstLoad && _isFetching;
 
   void _goToMapTab() {
     setState(() => _navIndex = 1);
@@ -36,10 +41,9 @@ class _PoliceDashboardScreenState extends State<PoliceDashboardScreen> {
   }
 
   Future<void> _loadData() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
+    if (_isFetching) return;
+    _isFetching = true;
+    setState(() => _error = null);
     try {
       final results = await Future.wait([
         _policeService.getActiveTrips(),
@@ -51,13 +55,15 @@ class _PoliceDashboardScreenState extends State<PoliceDashboardScreen> {
         _activeTrips = results[0] as List<Trip>;
         _activeCorridors = results[1] as List<Trip>;
         _alerts = results[2] as List<Map<String, dynamic>>;
-        _isLoading = false;
+        _isFirstLoad = false;
+        _isFetching = false;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _error = 'Failed to load data';
-        _isLoading = false;
+        _isFirstLoad = false;
+        _isFetching = false;
       });
     }
   }
@@ -73,12 +79,13 @@ class _PoliceDashboardScreenState extends State<PoliceDashboardScreen> {
               trips: _activeTrips,
               corridorCount: _activeCorridors.length,
               isLoading: _isLoading,
+              isRefreshing: _isFetching && !_isFirstLoad,
               error: _error,
               onRefresh: _loadData,
               onTrackTrip: (_) => _goToMapTab(),
             ),
             PoliceMapTab(trips: _activeTrips, corridorCount: _activeCorridors.length),
-            PoliceAlertsTab(alerts: _alerts, isLoading: _isLoading, onRefresh: _loadData),
+            PoliceAlertsTab(alerts: _alerts, isLoading: _isLoading, isRefreshing: _isFetching && !_isFirstLoad, onRefresh: _loadData),
             const PoliceSettingsTab(),
           ],
         ),

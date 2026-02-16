@@ -93,6 +93,21 @@ class Trip {
     return DateTime.parse(value as String);
   }
 
+  /// Placeholder instance for skeleton loading (Skeletonizer).
+  factory Trip.dummy() => Trip(
+        id: '00000000-0000-0000-0000-000000000000',
+        driverId: '00000000-0000-0000-0000-000000000000',
+        status: TripStatus.enRoute,
+        incidentType: IncidentType.cardiac,
+        severity: 7,
+        pickupLatitude: 0,
+        pickupLongitude: 0,
+        createdAt: DateTime.now(),
+        etaSeconds: 480,
+        driverName: 'Loading driver...',
+        hospitalName: 'Loading hospital...',
+      );
+
   Trip copyWith({TripStatus? status, String? hospitalId, String? hospitalName,
       double? hospitalLatitude, double? hospitalLongitude}) {
     return Trip(

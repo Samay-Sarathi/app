@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -9,13 +10,15 @@ import '../../../shared/widgets/status_badge.dart';
 /// Police Alerts tab — uses shared AlertItem.
 class PoliceAlertsTab extends StatelessWidget {
   final List<Map<String, dynamic>> alerts;
-  final bool isLoading;
+  final bool isLoading; // true only for first load (skeleton)
+  final bool isRefreshing; // true during subsequent refreshes (spinner)
   final VoidCallback onRefresh;
 
   const PoliceAlertsTab({
     super.key,
     required this.alerts,
     required this.isLoading,
+    this.isRefreshing = false,
     required this.onRefresh,
   });
 
@@ -73,15 +76,31 @@ class PoliceAlertsTab extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               GestureDetector(
-                onTap: onRefresh,
-                child: const Icon(Icons.refresh, size: 20, color: AppColors.medicalBlue),
+                onTap: (isLoading || isRefreshing) ? null : onRefresh,
+                child: isRefreshing
+                    ? const SizedBox(
+                        width: 20, height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.medicalBlue),
+                      )
+                    : Icon(Icons.refresh, size: 20, color: AppColors.medicalBlue.withValues(alpha: isLoading ? 0.4 : 1.0)),
               ),
             ],
           ),
           const SizedBox(height: 8),
           Expanded(
             child: isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? Skeletonizer(
+                    child: ListView.separated(
+                      itemCount: 4,
+                      separatorBuilder: (_, _) => const SizedBox(height: 10),
+                      itemBuilder: (_, _) => const AlertItem(
+                        type: AlertType.info,
+                        title: 'TRIP CREATED loading event',
+                        subtitle: 'Trip: 00000000... — Loading details',
+                        time: '2m ago',
+                      ),
+                    ),
+                  )
                 : alerts.isEmpty
                     ? Center(
                         child: Column(
