@@ -4,22 +4,22 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
-import '../../core/services/helper_service.dart';
+import '../../core/services/paramedic_service.dart';
 
-/// Helper scans the driver's QR code to link to the active trip (no auth required).
-class HelperScanScreen extends StatefulWidget {
-  const HelperScanScreen({super.key});
+/// Paramedic scans the driver's QR code to link to the active trip (no auth required).
+class ParamedicScanScreen extends StatefulWidget {
+  const ParamedicScanScreen({super.key});
 
   @override
-  State<HelperScanScreen> createState() => _HelperScanScreenState();
+  State<ParamedicScanScreen> createState() => _ParamedicScanScreenState();
 }
 
-class _HelperScanScreenState extends State<HelperScanScreen> {
+class _ParamedicScanScreenState extends State<ParamedicScanScreen> {
   final MobileScannerController _scannerController = MobileScannerController(
     detectionSpeed: DetectionSpeed.normal,
     facing: CameraFacing.back,
   );
-  final HelperService _helperService = HelperService();
+  final ParamedicService _paramedicService = ParamedicService();
 
   bool _isProcessing = false;
   String? _errorMsg;
@@ -46,14 +46,14 @@ class _HelperScanScreenState extends State<HelperScanScreen> {
     _scannerController.stop();
 
     try {
-      final result = await _helperService.linkToTrip(paramedicToken: token);
+      final result = await _paramedicService.linkToTrip(paramedicToken: token);
       if (!mounted) return;
 
       final sessionToken = result['sessionToken'] as String;
       final tripId = result['tripId'] as String;
       final hospitalName = result['hospitalName'] as String?;
 
-      context.go('/helper/triage', extra: {
+      context.go('/paramedic/vitals', extra: {
         'sessionToken': sessionToken,
         'tripId': tripId,
         'hospitalName': hospitalName,
@@ -107,7 +107,7 @@ class _HelperScanScreenState extends State<HelperScanScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Scan the QR code on the driver\'s phone to assist with triage vitals.',
+                    'Scan the QR code on the driver\'s phone to assist with vitals.',
                     style: AppTypography.bodyS.copyWith(color: AppColors.mediumGray),
                     textAlign: TextAlign.center,
                   ),

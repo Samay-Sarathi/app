@@ -1,6 +1,6 @@
 /// Matches backend `TripStatus` enum.
 enum TripStatus {
-  triage,
+  vitals,
   destinationLocked,
   enRoute,
   arrived,
@@ -9,8 +9,8 @@ enum TripStatus {
 
   static TripStatus fromJson(String value) {
     switch (value.toUpperCase()) {
-      case 'TRIAGE':
-        return TripStatus.triage;
+      case 'VITALS':
+        return TripStatus.vitals;
       case 'DESTINATION_LOCKED':
         return TripStatus.destinationLocked;
       case 'EN_ROUTE':
@@ -22,14 +22,14 @@ enum TripStatus {
       case 'CANCELLED':
         return TripStatus.cancelled;
       default:
-        return TripStatus.triage;
+        return TripStatus.vitals;
     }
   }
 
   String toJson() {
     switch (this) {
-      case TripStatus.triage:
-        return 'TRIAGE';
+      case TripStatus.vitals:
+        return 'VITALS';
       case TripStatus.destinationLocked:
         return 'DESTINATION_LOCKED';
       case TripStatus.enRoute:
@@ -45,8 +45,8 @@ enum TripStatus {
 
   String get label {
     switch (this) {
-      case TripStatus.triage:
-        return 'Triage';
+      case TripStatus.vitals:
+        return 'Vitals';
       case TripStatus.destinationLocked:
         return 'Hospital Locked';
       case TripStatus.enRoute:

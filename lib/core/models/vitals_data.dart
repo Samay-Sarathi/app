@@ -1,5 +1,5 @@
-/// Triage vitals data — matches backend `TriageResponse` / `TriageRequest`.
-class TriageData {
+/// Vitals data — matches backend `VitalsResponse` / `VitalsRequest`.
+class VitalsData {
   final String? id;
   final String? tripId;
   final String? recordedBy;
@@ -13,7 +13,7 @@ class TriageData {
   final String? notes;
   final DateTime? recordedAt;
 
-  const TriageData({
+  const VitalsData({
     this.id,
     this.tripId,
     this.recordedBy,
@@ -28,8 +28,8 @@ class TriageData {
     this.recordedAt,
   });
 
-  factory TriageData.fromJson(Map<String, dynamic> json) {
-    return TriageData(
+  factory VitalsData.fromJson(Map<String, dynamic> json) {
+    return VitalsData(
       id: json['id'] as String?,
       tripId: json['tripId'] as String?,
       recordedBy: json['recordedBy'] as String?,

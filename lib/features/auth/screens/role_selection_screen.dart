@@ -30,7 +30,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
               Align(
                 alignment: Alignment.centerRight,
                 child: IconButton(
-                  onPressed: () => context.go('/helper/scan'),
+                  onPressed: () => context.go('/paramedic/scan'),
                   icon: const Icon(Icons.qr_code_scanner),
                   tooltip: 'Scan QR to assist',
                   color: AppColors.mediumGray,

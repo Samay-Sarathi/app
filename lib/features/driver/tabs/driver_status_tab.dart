@@ -214,7 +214,7 @@ class _ActiveTripCard extends StatelessWidget {
             child: OutlinedButton.icon(
               onPressed: () {
                 switch (trip.status) {
-                  case TripStatus.triage:
+                  case TripStatus.vitals:
                     context.go('/driver/hospital-select');
                     break;
                   case TripStatus.destinationLocked:
@@ -222,7 +222,7 @@ class _ActiveTripCard extends StatelessWidget {
                     context.go('/driver/navigation');
                     break;
                   case TripStatus.arrived:
-                    context.go('/driver/triage');
+                    context.go('/driver/arrival');
                     break;
                   default:
                     break;

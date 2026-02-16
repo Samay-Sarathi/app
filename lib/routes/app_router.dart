@@ -12,11 +12,11 @@ import '../features/trip/screens/emergency_case_screen.dart';
 import '../features/trip/screens/severity_rating_screen.dart';
 import '../features/trip/screens/hospital_selection_screen.dart';
 import '../features/trip/screens/navigation_screen.dart';
-import '../features/trip/screens/triage_sync_screen.dart';
+import '../features/trip/screens/arrival_screen.dart';
 import '../features/hospital/screens/emergency_alert_screen.dart';
 import '../features/hospital/screens/ambulance_sync_screen.dart';
-import '../features/helper/helper_scan_screen.dart';
-import '../features/helper/helper_triage_screen.dart';
+import '../features/paramedic/paramedic_scan_screen.dart';
+import '../features/paramedic/paramedic_vitals_screen.dart';
 import '../features/hospital/hospital_dashboard_screen.dart';
 import '../features/admin/admin_dashboard_screen.dart';
 import '../features/police/police_dashboard_screen.dart';
@@ -24,7 +24,7 @@ import '../shared/screens/about_screen.dart';
 import '../shared/screens/terms_screen.dart';
 
 /// Routes that don't require authentication.
-const _publicPaths = {'/', '/roles', '/sign-in', '/register', '/about', '/terms', '/helper/scan', '/helper/triage'};
+const _publicPaths = {'/', '/roles', '/sign-in', '/register', '/about', '/terms', '/paramedic/scan', '/paramedic/vitals'};
 
 /// Allowed route prefixes per role.
 const _roleRoutes = <UserRole, List<String>>{
@@ -117,8 +117,8 @@ class AppRouter {
         builder: (context, state) => const NavigationScreen(),
       ),
       GoRoute(
-        path: '/driver/triage',
-        builder: (context, state) => const TriageSyncScreen(),
+        path: '/driver/arrival',
+        builder: (context, state) => const ArrivalScreen(),
       ),
 
       // Hospital routes
@@ -147,16 +147,16 @@ class AppRouter {
         builder: (context, state) => const PoliceDashboardScreen(),
       ),
 
-      // Helper routes (public, no auth)
+      // Paramedic routes (public, no auth)
       GoRoute(
-        path: '/helper/scan',
-        builder: (context, state) => const HelperScanScreen(),
+        path: '/paramedic/scan',
+        builder: (context, state) => const ParamedicScanScreen(),
       ),
       GoRoute(
-        path: '/helper/triage',
+        path: '/paramedic/vitals',
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>? ?? {};
-          return HelperTriageScreen(
+          return ParamedicVitalsScreen(
             sessionToken: extra['sessionToken'] as String? ?? '',
             tripId: extra['tripId'] as String? ?? '',
             hospitalName: extra['hospitalName'] as String?,

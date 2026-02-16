@@ -10,14 +10,14 @@ import '../../../core/providers/trip_provider.dart';
 /// End-of-trip screen with two paths:
 /// 1. **Confirm Arrival** — simple tap, transitions EN_ROUTE → ARRIVED
 /// 2. **Cancel Trip** — requires a reason, transitions to CANCELLED
-class TriageSyncScreen extends StatefulWidget {
-  const TriageSyncScreen({super.key});
+class ArrivalScreen extends StatefulWidget {
+  const ArrivalScreen({super.key});
 
   @override
-  State<TriageSyncScreen> createState() => _TriageSyncScreenState();
+  State<ArrivalScreen> createState() => _ArrivalScreenState();
 }
 
-class _TriageSyncScreenState extends State<TriageSyncScreen> {
+class _ArrivalScreenState extends State<ArrivalScreen> {
   bool _isSubmitting = false;
   String? _errorMessage;
 

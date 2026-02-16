@@ -22,7 +22,7 @@ class PoliceAlertsTab extends StatelessWidget {
   AlertType _typeFromEventType(String? eventType) {
     if (eventType == null) return AlertType.info;
     final upper = eventType.toUpperCase();
-    if (upper.contains('CREATED') || upper.contains('EN_ROUTE') || upper.contains('TRIAGE')) {
+    if (upper.contains('CREATED') || upper.contains('EN_ROUTE') || upper.contains('VITALS')) {
       return AlertType.emergency;
     }
     if (upper.contains('COMPLETED') || upper.contains('ARRIVED')) {

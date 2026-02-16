@@ -268,8 +268,8 @@ class _NavigationScreenState extends State<NavigationScreen> {
       if (status == 'CANCELLED') {
         _showCancellationBanner();
       }
-      // Hospital rejected — trip reverted to TRIAGE
-      if (status == 'TRIAGE') {
+      // Hospital rejected — trip reverted to VITALS
+      if (status == 'VITALS') {
         _handleHospitalRejection(data['reason'] as String?);
       }
       debugPrint('Trip status update via WS: $status');
@@ -513,7 +513,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
                 icon: _isNearHospital ? Icons.check_circle : Icons.flag,
                 label: _isNearHospital ? 'Arrive' : 'End Trip',
                 color: _isNearHospital ? AppColors.lifelineGreen : AppColors.warmOrange,
-                onTap: () => context.go('/driver/triage'),
+                onTap: () => context.go('/driver/arrival'),
               )),
               if (AppConfig.devMode) ...[
                 const SizedBox(width: 10),

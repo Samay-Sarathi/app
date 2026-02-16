@@ -1,13 +1,13 @@
 import '../network/api_client.dart';
-import '../models/triage_data.dart';
+import '../models/vitals_data.dart';
 
-/// Service for the anonymous helper flow (QR scan → triage entry).
-class HelperService {
+/// Service for the anonymous paramedic flow (QR scan → vitals entry).
+class ParamedicService {
   final ApiClient _client;
 
-  HelperService([ApiClient? client]) : _client = client ?? ApiClient.instance;
+  ParamedicService([ApiClient? client]) : _client = client ?? ApiClient.instance;
 
-  /// `POST /helper/link` — Link helper to trip via paramedic token.
+  /// `POST /paramedic/link` — Link paramedic to trip via paramedic token.
   /// Returns `{ sessionToken, tripId, hospitalName }`.
   Future<Map<String, dynamic>> linkToTrip({
     required String paramedicToken,
@@ -15,7 +15,7 @@ class HelperService {
     String? userAgent,
   }) async {
     final response = await _client.post(
-      '/helper/link',
+      '/paramedic/link',
       data: {
         'paramedicToken': paramedicToken,
         if (deviceId != null) 'deviceId': deviceId,
@@ -25,28 +25,28 @@ class HelperService {
     return response.data as Map<String, dynamic>;
   }
 
-  /// `POST /helper/vitals` — Submit vitals for the linked trip.
-  Future<TriageData> submitVitals({
+  /// `POST /paramedic/vitals` — Submit vitals for the linked trip.
+  Future<VitalsData> submitVitals({
     required String sessionToken,
-    required TriageData data,
+    required VitalsData data,
   }) async {
     final body = data.toJson();
     body['sessionToken'] = sessionToken;
-    final response = await _client.post('/helper/vitals', data: body);
-    return TriageData.fromJson(response.data as Map<String, dynamic>);
+    final response = await _client.post('/paramedic/vitals', data: body);
+    return VitalsData.fromJson(response.data as Map<String, dynamic>);
   }
 
-  /// `PUT /helper/identity` — Submit self-reported helper identity.
+  /// `PUT /paramedic/identity` — Submit self-reported paramedic identity.
   Future<void> updateIdentity({
     required String sessionToken,
-    String? helperName,
+    String? paramedicName,
     String? contactNumber,
   }) async {
     await _client.put(
-      '/helper/identity',
+      '/paramedic/identity',
       data: {
         'sessionToken': sessionToken,
-        if (helperName != null) 'helperName': helperName,
+        if (paramedicName != null) 'paramedicName': paramedicName,
         if (contactNumber != null) 'contactNumber': contactNumber,
       },
     );

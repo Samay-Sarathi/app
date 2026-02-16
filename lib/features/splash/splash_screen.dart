@@ -61,7 +61,7 @@ class _SplashScreenState extends State<SplashScreen>
       if (trip != null && trip.status.isActive) {
         // Resume to the appropriate screen based on trip status
         switch (trip.status) {
-          case TripStatus.triage:
+          case TripStatus.vitals:
             // Trip created but no hospital selected yet — go to hospital select
             await tripProvider.fetchRecommendations();
             if (!mounted) return;
@@ -72,7 +72,7 @@ class _SplashScreenState extends State<SplashScreen>
             context.go('/driver/navigation');
             return;
           case TripStatus.arrived:
-            context.go('/driver/triage');
+            context.go('/driver/arrival');
             return;
           default:
             break;

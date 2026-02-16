@@ -8,8 +8,8 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/providers/hospital_provider.dart';
 import '../../../core/services/websocket_service.dart';
-import '../../../core/services/triage_service.dart';
-import '../../../core/models/triage_data.dart';
+import '../../../core/services/vitals_service.dart';
+import '../../../core/models/vitals_data.dart';
 import '../../../core/models/trip.dart';
 import '../../../core/map/custom_markers.dart';
 import '../../../shared/widgets/map_placeholder.dart';
@@ -28,8 +28,8 @@ class _AmbulanceSyncScreenState extends State<AmbulanceSyncScreen> {
   GoogleMapController? _mapController;
 
   // Live vitals from WebSocket
-  final TriageService _triageService = TriageService();
-  TriageData? _latestVitals;
+  final VitalsService _vitalsService = VitalsService();
+  VitalsData? _latestVitals;
   String? _vitalsTopic;
   String? _locationTopic;
   double? _ambulanceLat;
@@ -64,7 +64,7 @@ class _AmbulanceSyncScreenState extends State<AmbulanceSyncScreen> {
     final tripId = incomingTrip.id;
 
     try {
-      _latestVitals = await _triageService.getLatestVitals(tripId);
+      _latestVitals = await _vitalsService.getLatestVitals(tripId);
       if (mounted) setState(() {});
     } catch (_) {}
 
@@ -73,7 +73,7 @@ class _AmbulanceSyncScreenState extends State<AmbulanceSyncScreen> {
     ws.subscribe(_vitalsTopic!, (data) {
       if (!mounted) return;
       setState(() {
-        _latestVitals = TriageData.fromJson(data);
+        _latestVitals = VitalsData.fromJson(data);
       });
     });
 
@@ -209,7 +209,7 @@ class _AmbulanceSyncScreenState extends State<AmbulanceSyncScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Triage info
+              // Vitals info
               Row(
                 children: [
                   Expanded(
@@ -222,7 +222,7 @@ class _AmbulanceSyncScreenState extends State<AmbulanceSyncScreen> {
                       ),
                       child: Column(
                         children: [
-                          Text('TRIAGE', style: AppTypography.overline.copyWith(color: AppColors.mediumGray)),
+                          Text('VITALS', style: AppTypography.overline.copyWith(color: AppColors.mediumGray)),
                           const SizedBox(height: 4),
                           Text('LEVEL $severityLevel', style: AppTypography.heading3.copyWith(color: AppColors.emergencyRed)),
                           Text(incidentLabel, style: AppTypography.caption.copyWith(color: AppColors.emergencyRed)),

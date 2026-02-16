@@ -4,18 +4,18 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
-import '../../core/models/triage_data.dart';
-import '../../core/services/helper_service.dart';
+import '../../core/models/vitals_data.dart';
+import '../../core/services/paramedic_service.dart';
 import '../../core/services/websocket_service.dart';
 import '../../shared/widgets/buttons.dart';
 
-/// Helper triage form — enter vitals anonymously for the linked trip.
-class HelperTriageScreen extends StatefulWidget {
+/// Paramedic vitals form — enter vitals anonymously for the linked trip.
+class ParamedicVitalsScreen extends StatefulWidget {
   final String sessionToken;
   final String tripId;
   final String? hospitalName;
 
-  const HelperTriageScreen({
+  const ParamedicVitalsScreen({
     super.key,
     required this.sessionToken,
     required this.tripId,
@@ -23,11 +23,11 @@ class HelperTriageScreen extends StatefulWidget {
   });
 
   @override
-  State<HelperTriageScreen> createState() => _HelperTriageScreenState();
+  State<ParamedicVitalsScreen> createState() => _ParamedicVitalsScreenState();
 }
 
-class _HelperTriageScreenState extends State<HelperTriageScreen> {
-  final _helperService = HelperService();
+class _ParamedicVitalsScreenState extends State<ParamedicVitalsScreen> {
+  final _paramedicService = ParamedicService();
 
   final _heartRateController = TextEditingController();
   final _bpController = TextEditingController();
@@ -150,7 +150,7 @@ class _HelperTriageScreenState extends State<HelperTriageScreen> {
     });
 
     try {
-      final data = TriageData(
+      final data = VitalsData(
         heartRate: int.tryParse(_heartRateController.text),
         bloodPressure: _bpController.text.trim().isNotEmpty ? _bpController.text.trim() : null,
         spo2: int.tryParse(_spo2Controller.text),
@@ -161,7 +161,7 @@ class _HelperTriageScreenState extends State<HelperTriageScreen> {
         notes: _notesController.text.trim().isNotEmpty ? _notesController.text.trim() : null,
       );
 
-      await _helperService.submitVitals(
+      await _paramedicService.submitVitals(
         sessionToken: widget.sessionToken,
         data: data,
       );
@@ -190,9 +190,9 @@ class _HelperTriageScreenState extends State<HelperTriageScreen> {
 
     if (name.isNotEmpty || contact.isNotEmpty) {
       try {
-        await _helperService.updateIdentity(
+        await _paramedicService.updateIdentity(
           sessionToken: widget.sessionToken,
-          helperName: name.isNotEmpty ? name : null,
+          paramedicName: name.isNotEmpty ? name : null,
           contactNumber: contact.isNotEmpty ? contact : null,
         );
       } catch (_) {
@@ -234,7 +234,7 @@ class _HelperTriageScreenState extends State<HelperTriageScreen> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'HELPER TRIAGE',
+                    'PARAMEDIC VITALS',
                     style: AppTypography.overline.copyWith(
                       color: AppColors.lifelineGreen,
                       letterSpacing: 1.5,
