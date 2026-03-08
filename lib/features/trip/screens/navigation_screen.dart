@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:geolocator/geolocator.dart';
@@ -71,6 +70,17 @@ class _NavigationScreenState extends State<NavigationScreen> {
   bool _showCancelBanner = false;
   int _cancelCountdown = 3;
 
+  // Near hospital banner
+  bool _showNearHospitalBanner = false;
+  Timer? _nearHospitalBannerTimer;
+
+  // Police officer locations (from WebSocket)
+  final Map<String, _PoliceOfficerLocation> _policeLocations = {};
+  String? _subscribedPoliceTopic;
+  int _routeClearedCount = 0;
+  bool _showRouteClearedBanner = false;
+  Timer? _routeClearedBannerTimer;
+
   @override
   void initState() {
     super.initState();
@@ -78,6 +88,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
     _startCompass();
     _initNavigation();
     _subscribeToTripStatus();
+    _subscribeToPoliceLocations();
     _autoActivateCorridor();
   }
 
@@ -356,7 +367,60 @@ class _NavigationScreenState extends State<NavigationScreen> {
     final near = distance <= _arrivalRadiusMeters;
     if (near != _isNearHospital) {
       setState(() => _isNearHospital = near);
+      if (near) _showNearHospitalBannerWithAutoDismiss();
     }
+  }
+
+  void _showNearHospitalBannerWithAutoDismiss() {
+    _nearHospitalBannerTimer?.cancel();
+    setState(() => _showNearHospitalBanner = true);
+    _nearHospitalBannerTimer = Timer(const Duration(seconds: 7), () {
+      if (mounted) setState(() => _showNearHospitalBanner = false);
+    });
+  }
+
+  // ── Police Location Tracking ──
+
+  void _subscribeToPoliceLocations() {
+    final trip = context.read<TripProvider>().activeTrip;
+    if (trip == null) return;
+    final ws = context.read<WebSocketService>();
+    final topic = '/topic/trip/${trip.id}/police';
+    _subscribedPoliceTopic = topic;
+    ws.subscribe(topic, (data) {
+      if (!mounted) return;
+      final type = data['type'] as String?;
+      if (type == 'POLICE_LOCATION') {
+        final officerId = data['officerId'] as String? ?? '';
+        final lat = (data['latitude'] as num?)?.toDouble() ?? 0;
+        final lng = (data['longitude'] as num?)?.toDouble() ?? 0;
+        final name = data['officerName'] as String? ?? 'Officer';
+        final status = data['status'] as String? ?? 'ACKNOWLEDGED';
+        if (lat != 0 && lng != 0) {
+          setState(() {
+            _policeLocations[officerId] = _PoliceOfficerLocation(
+              officerId: officerId,
+              name: name,
+              position: LatLng(lat, lng),
+              status: status,
+            );
+          });
+        }
+      }
+    });
+  }
+
+  void _handleRouteClearedFromWS(Map<String, dynamic> data) {
+    final officerName = data['officerName'] as String? ?? 'An officer';
+    setState(() {
+      _routeClearedCount++;
+      _showRouteClearedBanner = true;
+    });
+    _routeClearedBannerTimer?.cancel();
+    _routeClearedBannerTimer = Timer(const Duration(seconds: 5), () {
+      if (mounted) setState(() => _showRouteClearedBanner = false);
+    });
+    debugPrint('Route cleared by $officerName');
   }
 
   // ── WebSocket Trip Status ──
@@ -372,6 +436,19 @@ class _NavigationScreenState extends State<NavigationScreen> {
       final status = data['status'] as String?;
       if (status == 'EN_ROUTE' && !_corridorActive) {
         setState(() => _corridorActive = true);
+      }
+      // Trip arrived (manual confirm went through from another device/session)
+      if (status == 'ARRIVED') {
+        context.go('/driver/arrival');
+      }
+
+      // Near hospital — show banner prompting driver to confirm arrival
+      final type = data['type'] as String?;
+      if (type == 'NEAR_HOSPITAL' && !_showNearHospitalBanner) {
+        _showNearHospitalBannerWithAutoDismiss();
+      }
+      if (type == 'ROUTE_CLEARED') {
+        _handleRouteClearedFromWS(data);
       }
       // Trip cancelled — show banner and auto-navigate
       if (status == 'CANCELLED') {
@@ -451,14 +528,16 @@ class _NavigationScreenState extends State<NavigationScreen> {
 
   @override
   void dispose() {
+    _nearHospitalBannerTimer?.cancel();
+    _routeClearedBannerTimer?.cancel();
     _markerAnimTimer?.cancel();
     _compassSub?.cancel();
     _locationSub?.cancel();
-    if (_subscribedTripTopic != null) {
-      try {
-        context.read<WebSocketService>().unsubscribe(_subscribedTripTopic!);
-      } catch (_) {}
-    }
+    try {
+      final ws = context.read<WebSocketService>();
+      if (_subscribedTripTopic != null) ws.unsubscribe(_subscribedTripTopic!);
+      if (_subscribedPoliceTopic != null) ws.unsubscribe(_subscribedPoliceTopic!);
+    } catch (_) {}
     _mapController?.dispose();
     super.dispose();
   }
@@ -531,6 +610,24 @@ class _NavigationScreenState extends State<NavigationScreen> {
       );
     }
 
+    // Police officer markers — small and subtle
+    for (final entry in _policeLocations.entries) {
+      final officer = entry.value;
+      markers.add(
+        Marker(
+          markerId: MarkerId('police_${officer.officerId}'),
+          position: officer.position,
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+          alpha: 0.7,
+          infoWindow: InfoWindow(
+            title: officer.name,
+            snippet: officer.status == 'CLEARED' ? 'Route Cleared' : 'On Duty',
+          ),
+          zIndexInt: 1,
+        ),
+      );
+    }
+
     // Route polyline — enhanced with dark outline
     final polylines = _routeInfo != null
         ? MapHelpers.createRoutePolyline(_routeInfo!.polylinePoints)
@@ -597,62 +694,176 @@ class _NavigationScreenState extends State<NavigationScreen> {
             ),
           ),
 
-          // ── Trip Cancelled Banner ──
-          if (_showCancelBanner)
-            Positioned.fill(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          // ── Route Cleared Banner ──
+          if (_showRouteClearedBanner && !_showCancelBanner)
+            Positioned(
+              top: 120,
+              left: 20,
+              right: 20,
+              child: Material(
+                color: Colors.transparent,
                 child: Container(
-                  color: Colors.black.withValues(alpha: 0.45),
-                  child: Center(
-                    child: Container(
-                      margin: const EdgeInsets.all(32),
-                      padding: const EdgeInsets.all(28),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.65),
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(
-                          color: AppColors.emergencyRed.withValues(alpha: 0.6),
-                          width: 1.5,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.emergencyRed.withValues(
-                              alpha: 0.3,
-                            ),
-                            blurRadius: 32,
-                            spreadRadius: 4,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: AppColors.calmPurple,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.25),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.verified, color: AppColors.white, size: 20),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          '$_routeClearedCount officer${_routeClearedCount > 1 ? 's' : ''} cleared the route',
+                          style: const TextStyle(
+                            color: AppColors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
                           ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+          // ── Near Hospital Banner (above bottom sheet) ──
+          if (_showNearHospitalBanner && !_showCancelBanner)
+            Positioned(
+              bottom: 220,
+              left: 20,
+              right: 20,
+              child: GestureDetector(
+                onTap: () => context.go('/driver/arrival'),
+                child: Material(
+                  color: Colors.transparent,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.lifelineGreen,
+                          AppColors.lifelineGreen.withValues(alpha: 0.85),
                         ],
                       ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.cancel,
-                            size: 56,
-                            color: AppColors.emergencyRed,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.3),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(10),
                           ),
-                          const SizedBox(height: 14),
-                          const Text(
-                            'TRIP CANCELLED',
+                          child: const Icon(Icons.local_hospital, color: AppColors.white, size: 22),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Approaching Hospital',
+                                style: TextStyle(
+                                  color: AppColors.white,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'Tap to confirm arrival',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Text(
+                            'Arrive',
                             style: TextStyle(
                               color: AppColors.white,
-                              fontSize: 22,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 1.5,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
-                          const SizedBox(height: 10),
-                          Text(
-                            'Redirecting in $_cancelCountdown...',
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 15,
-                            ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+          // ── Trip Cancelled Overlay ──
+          if (_showCancelBanner)
+            Positioned.fill(
+              child: AnimatedOpacity(
+                opacity: _showCancelBanner ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 300),
+                child: Container(
+                  color: Colors.black.withValues(alpha: 0.6),
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: AppColors.emergencyRed.withValues(alpha: 0.15),
+                            shape: BoxShape.circle,
                           ),
-                        ],
-                      ),
+                          child: const Icon(
+                            Icons.close_rounded,
+                            size: 44,
+                            color: AppColors.emergencyRed,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        const Text(
+                          'Trip Cancelled',
+                          style: TextStyle(
+                            color: AppColors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Returning to dashboard in $_cancelCountdown...',
+                          style: const TextStyle(
+                            color: Colors.white60,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -682,10 +893,11 @@ class _NavigationScreenState extends State<NavigationScreen> {
               Expanded(
                 child: MapActionButton(
                   icon: _isNearHospital ? Icons.check_circle : Icons.flag,
-                  label: _isNearHospital ? 'Arrive' : 'End Trip',
+                  label: _isNearHospital ? 'Confirm\nArrival' : 'End Trip',
                   color: _isNearHospital
                       ? AppColors.lifelineGreen
                       : AppColors.warmOrange,
+                  glowing: _isNearHospital,
                   onTap: () => context.go('/driver/arrival'),
                 ),
               ),
@@ -695,4 +907,19 @@ class _NavigationScreenState extends State<NavigationScreen> {
       ),
     );
   }
+}
+
+/// Holds a police officer's live location for map display.
+class _PoliceOfficerLocation {
+  final String officerId;
+  final String name;
+  final LatLng position;
+  final String status;
+
+  const _PoliceOfficerLocation({
+    required this.officerId,
+    required this.name,
+    required this.position,
+    required this.status,
+  });
 }

@@ -6,10 +6,13 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/providers/trip_provider.dart';
+import '../../../core/services/websocket_service.dart';
+import '../../../core/models/trip_status.dart';
 
-/// End-of-trip screen with two paths:
-/// 1. **Confirm Arrival** — simple tap, transitions EN_ROUTE → ARRIVED
-/// 2. **Cancel Trip** — requires a reason, transitions to CANCELLED
+/// End-of-trip screen:
+/// - EN_ROUTE: Shows "Confirm Arrival" button
+/// - ARRIVED: Shows waiting state with pulsing indicator until hospital confirms
+/// - COMPLETED: Auto-navigates to dashboard
 class ArrivalScreen extends StatefulWidget {
   const ArrivalScreen({super.key});
 
@@ -17,9 +20,87 @@ class ArrivalScreen extends StatefulWidget {
   State<ArrivalScreen> createState() => _ArrivalScreenState();
 }
 
-class _ArrivalScreenState extends State<ArrivalScreen> {
+class _ArrivalScreenState extends State<ArrivalScreen>
+    with SingleTickerProviderStateMixin {
   bool _isSubmitting = false;
   String? _errorMessage;
+  String? _subscribedTopic;
+  late AnimationController _pulseController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _subscribeToTripStatus();
+    });
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    _unsubscribe();
+    super.dispose();
+  }
+
+  void _subscribeToTripStatus() {
+    final trip = context.read<TripProvider>().activeTrip;
+    if (trip == null) return;
+
+    final ws = context.read<WebSocketService>();
+    final topic = '/topic/trip/${trip.id}';
+    _subscribedTopic = topic;
+
+    ws.subscribe(topic, (data) {
+      if (!mounted) return;
+      final status = data['status'] ?? data['newStatus'];
+      if (status == 'COMPLETED') {
+        _onTripCompleted();
+      }
+      if (status == 'CANCELLED') {
+        _onTripCancelled();
+      }
+      // Refresh trip state in provider
+      context.read<TripProvider>().refreshTrip();
+    });
+  }
+
+  void _unsubscribe() {
+    if (_subscribedTopic != null) {
+      try {
+        context.read<WebSocketService>().unsubscribe(_subscribedTopic!);
+      } catch (_) {}
+    }
+  }
+
+  void _onTripCompleted() {
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(
+      const SnackBar(
+        content: Text('Trip completed — patient handed off successfully'),
+        backgroundColor: AppColors.lifelineGreen,
+        duration: Duration(seconds: 3),
+      ),
+    );
+    context.read<TripProvider>().clearTrip();
+    context.go('/driver/dashboard');
+  }
+
+  void _onTripCancelled() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Trip has been cancelled'),
+        backgroundColor: AppColors.warmOrange,
+      ),
+    );
+    context.go('/driver/dashboard');
+  }
 
   Future<void> _confirmArrival() async {
     setState(() {
@@ -29,7 +110,6 @@ class _ArrivalScreenState extends State<ArrivalScreen> {
 
     final tripProvider = context.read<TripProvider>();
     final messenger = ScaffoldMessenger.of(context);
-    final router = GoRouter.of(context);
 
     // Get current location for proximity validation
     double? lat;
@@ -55,11 +135,12 @@ class _ArrivalScreenState extends State<ArrivalScreen> {
     if (success) {
       messenger.showSnackBar(
         const SnackBar(
-          content: Text('Arrival confirmed — hospital notified'),
+          content: Text('Arrival confirmed — waiting for hospital'),
           backgroundColor: AppColors.lifelineGreen,
         ),
       );
-      router.go('/driver/dashboard');
+      // Stay on this screen — now in ARRIVED waiting state
+      setState(() => _isSubmitting = false);
     } else {
       setState(() {
         _isSubmitting = false;
@@ -132,7 +213,6 @@ class _ArrivalScreenState extends State<ArrivalScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              // ── Full-width action buttons ──
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -217,6 +297,7 @@ class _ArrivalScreenState extends State<ArrivalScreen> {
         tripProvider.handshakeResult?.hospitalName ??
         trip?.hospitalName ??
         'Hospital';
+    final isArrived = trip != null && trip.status == TripStatus.arrived;
 
     return Scaffold(
       backgroundColor: AppColors.commandDark,
@@ -226,32 +307,83 @@ class _ArrivalScreenState extends State<ArrivalScreen> {
           child: Column(
             children: [
               const Spacer(),
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  color: AppColors.lifelineGreen.withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
+
+              // Icon — pulsing when waiting for hospital
+              if (isArrived)
+                AnimatedBuilder(
+                  animation: _pulseController,
+                  builder: (context, child) {
+                    final scale = 1.0 + (_pulseController.value * 0.1);
+                    final opacity = 0.15 + (_pulseController.value * 0.15);
+                    return Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        color: AppColors.lifelineGreen.withValues(alpha: opacity),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Transform.scale(
+                        scale: scale,
+                        child: const Icon(
+                          Icons.check_circle,
+                          size: 48,
+                          color: AppColors.lifelineGreen,
+                        ),
+                      ),
+                    );
+                  },
+                )
+              else
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: AppColors.lifelineGreen.withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.flag,
+                    size: 48,
+                    color: AppColors.lifelineGreen,
+                  ),
                 ),
-                child: const Icon(
-                  Icons.flag,
-                  size: 48,
-                  color: AppColors.lifelineGreen,
-                ),
-              ),
+
               const SizedBox(height: 24),
               Text(
-                'End Trip',
+                isArrived ? 'You\'ve Arrived' : 'End Trip',
                 style: AppTypography.heading1.copyWith(color: AppColors.white),
               ),
               const SizedBox(height: 12),
               Text(
-                'You are arriving at $hospitalName.\nThe hospital and traffic police have been notified.',
+                isArrived
+                    ? 'You have arrived at $hospitalName.\nWaiting for hospital staff to confirm handoff.'
+                    : 'You are arriving at $hospitalName.\nThe hospital and traffic police have been notified.',
                 style: AppTypography.bodyS.copyWith(
                   color: AppColors.mediumGray,
                 ),
                 textAlign: TextAlign.center,
               ),
+
+              // Waiting indicator for ARRIVED state
+              if (isArrived) ...[
+                const SizedBox(height: 24),
+                const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    color: AppColors.lifelineGreen,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Hospital will confirm once patient is received',
+                  style: AppTypography.bodyS.copyWith(
+                    color: AppColors.mediumGray,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
 
               if (_errorMessage != null) ...[
                 const SizedBox(height: 16),
@@ -286,42 +418,44 @@ class _ArrivalScreenState extends State<ArrivalScreen> {
               ],
               const Spacer(),
 
-              // Confirm Arrival — primary action
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton.icon(
-                  onPressed: _isSubmitting ? null : _confirmArrival,
-                  icon: _isSubmitting
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppColors.white,
-                          ),
-                        )
-                      : const Icon(Icons.check_circle),
-                  label: Text(
-                    _isSubmitting ? 'Confirming...' : 'Confirm Arrival',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
+              // EN_ROUTE: Show confirm button | ARRIVED: No confirm needed
+              if (!isArrived) ...[
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton.icon(
+                    onPressed: _isSubmitting ? null : _confirmArrival,
+                    icon: _isSubmitting
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.white,
+                            ),
+                          )
+                        : const Icon(Icons.check_circle),
+                    label: Text(
+                      _isSubmitting ? 'Confirming...' : 'Confirm Arrival',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.lifelineGreen,
-                    foregroundColor: AppColors.white,
-                    disabledBackgroundColor: AppColors.lifelineGreen.withValues(
-                      alpha: 0.5,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.lifelineGreen,
+                      foregroundColor: AppColors.white,
+                      disabledBackgroundColor: AppColors.lifelineGreen.withValues(
+                        alpha: 0.5,
+                      ),
+                      shape: const StadiumBorder(),
                     ),
-                    shape: const StadiumBorder(),
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
+                const SizedBox(height: 12),
+              ],
 
-              // Cancel Trip — requires reason
+              // Cancel Trip — available in both EN_ROUTE and ARRIVED
               SizedBox(
                 width: double.infinity,
                 height: 48,
@@ -339,9 +473,9 @@ class _ArrivalScreenState extends State<ArrivalScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
 
-              // Go back to navigation
+              const SizedBox(height: 12),
+              // Go back to navigation map
               SizedBox(
                 width: double.infinity,
                 height: 48,
@@ -356,7 +490,8 @@ class _ArrivalScreenState extends State<ArrivalScreen> {
                       color: AppColors.white.withValues(alpha: 0.3),
                     ),
                   ),
-                  child: const Text('Go Back', style: TextStyle(fontSize: 16)),
+                  child:
+                      const Text('Go Back', style: TextStyle(fontSize: 16)),
                 ),
               ),
             ],

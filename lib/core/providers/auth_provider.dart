@@ -35,6 +35,7 @@ class AuthProvider extends ChangeNotifier {
   bool get isAuthenticated => _user != null;
   UserRole? get role => _user?.role;
   String? get token => _user?.token;
+  String? get userId => _user?.userId;
   String get fullName => _user?.fullName ?? '';
 
   /// Dashboard route for the current user's role.

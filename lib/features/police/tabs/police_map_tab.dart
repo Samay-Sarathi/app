@@ -11,12 +11,20 @@ import '../../../shared/widgets/map_placeholder.dart';
 import '../../../shared/widgets/map/map_helpers.dart';
 import '../../../shared/widgets/status_badge.dart';
 
-/// Police Map tab — jurisdiction map with ambulance markers.
+/// Police Map tab — live ambulance tracking with officer's own location.
 class PoliceMapTab extends StatefulWidget {
   final List<Trip> trips;
   final int corridorCount;
+  final Map<String, LatLng> ambulanceLocations;
+  final LatLng? officerLocation;
 
-  const PoliceMapTab({super.key, required this.trips, required this.corridorCount});
+  const PoliceMapTab({
+    super.key,
+    required this.trips,
+    required this.corridorCount,
+    this.ambulanceLocations = const {},
+    this.officerLocation,
+  });
 
   @override
   State<PoliceMapTab> createState() => _PoliceMapTabState();
@@ -43,9 +51,17 @@ class _PoliceMapTabState extends State<PoliceMapTab> {
     super.dispose();
   }
 
+  LatLng _getMarkerPosition(Trip t) {
+    // Use live WebSocket location if available, fallback to pickup location
+    return widget.ambulanceLocations[t.id] ??
+        LatLng(t.pickupLatitude, t.pickupLongitude);
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final hasLiveData = widget.ambulanceLocations.isNotEmpty;
+
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.spaceMd),
       child: Column(
@@ -56,8 +72,8 @@ class _PoliceMapTabState extends State<PoliceMapTab> {
             roleColor: AppColors.calmPurple,
             roleTitle: 'Jurisdiction Map',
             userName: '${widget.trips.length} ambulances tracked',
-            badgeStatus: BadgeStatus.synced,
-            badgeLabel: 'GPS ACTIVE',
+            badgeStatus: hasLiveData ? BadgeStatus.active : BadgeStatus.synced,
+            badgeLabel: hasLiveData ? 'LIVE' : 'GPS ACTIVE',
           ),
           const SizedBox(height: 12),
           Expanded(
@@ -65,17 +81,19 @@ class _PoliceMapTabState extends State<PoliceMapTab> {
               borderRadius: AppSpacing.borderRadiusLg,
               child: AppConfig.enableMaps
                   ? GoogleMap(
-                      initialCameraPosition: widget.trips.isNotEmpty
-                          ? CameraPosition(
-                              target: LatLng(widget.trips.first.pickupLatitude, widget.trips.first.pickupLongitude),
-                              zoom: 13,
-                            )
-                          : const CameraPosition(target: LatLng(12.8456, 77.6603), zoom: 14.0),
+                      initialCameraPosition: widget.officerLocation != null
+                          ? CameraPosition(target: widget.officerLocation!, zoom: 14)
+                          : widget.trips.isNotEmpty
+                              ? CameraPosition(
+                                  target: _getMarkerPosition(widget.trips.first),
+                                  zoom: 13,
+                                )
+                              : const CameraPosition(target: LatLng(12.8456, 77.6603), zoom: 14.0),
                       markers: {
                         for (final t in widget.trips)
                           Marker(
                             markerId: MarkerId(t.id),
-                            position: LatLng(t.pickupLatitude, t.pickupLongitude),
+                            position: _getMarkerPosition(t),
                             icon: _ambulanceIcon ?? BitmapDescriptor.defaultMarkerWithHue(
                               t.severity >= 7 ? BitmapDescriptor.hueRed : BitmapDescriptor.hueOrange,
                             ),
@@ -86,7 +104,7 @@ class _PoliceMapTabState extends State<PoliceMapTab> {
                           ),
                       },
                       myLocationEnabled: true,
-                      myLocationButtonEnabled: false,
+                      myLocationButtonEnabled: true,
                       zoomControlsEnabled: false,
                       mapToolbarEnabled: false,
                       trafficEnabled: true,
@@ -108,10 +126,11 @@ class _PoliceMapTabState extends State<PoliceMapTab> {
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: widget.trips.length,
-                separatorBuilder: (context, index) => const SizedBox(width: 8),
-                itemBuilder: (context, index) {
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (_, index) {
                   final t = widget.trips[index];
                   final sColor = t.severity >= 7 ? AppColors.emergencyRed : AppColors.warmOrange;
+                  final hasLive = widget.ambulanceLocations.containsKey(t.id);
                   return Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
@@ -122,13 +141,28 @@ class _PoliceMapTabState extends State<PoliceMapTab> {
                     child: Row(
                       children: [
                         Icon(Icons.local_shipping, size: 16, color: sColor),
+                        if (hasLive)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 4),
+                            child: Container(
+                              width: 6, height: 6,
+                              decoration: const BoxDecoration(color: AppColors.lifelineGreen, shape: BoxShape.circle),
+                            ),
+                          ),
                         const SizedBox(width: 8),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(t.driverName ?? 'Ambulance', style: AppTypography.caption.copyWith(fontWeight: FontWeight.w700, color: sColor)),
-                            Text(t.etaSeconds != null ? 'ETA ${(t.etaSeconds! / 60).ceil()}m' : 'ETA —', style: AppTypography.overline.copyWith(color: AppColors.mediumGray, fontSize: 9)),
+                            Text(
+                              hasLive ? 'LIVE' : (t.etaSeconds != null ? 'ETA ${(t.etaSeconds! / 60).ceil()}m' : 'ETA —'),
+                              style: AppTypography.overline.copyWith(
+                                color: hasLive ? AppColors.lifelineGreen : AppColors.mediumGray,
+                                fontSize: 9,
+                                fontWeight: hasLive ? FontWeight.w700 : FontWeight.w400,
+                              ),
+                            ),
                           ],
                         ),
                       ],
@@ -139,7 +173,7 @@ class _PoliceMapTabState extends State<PoliceMapTab> {
             ),
             const SizedBox(height: 10),
           ],
-          // Signal status bar — use real corridor count
+          // Corridor status bar
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(

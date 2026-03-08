@@ -235,36 +235,68 @@ class _ActiveTripCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () {
-                switch (trip.status) {
-                  case TripStatus.vitals:
-                    context.go('/driver/hospital-select');
-                    break;
-                  case TripStatus.destinationLocked:
-                  case TripStatus.enRoute:
-                    context.go('/driver/navigation');
-                    break;
-                  case TripStatus.arrived:
-                    context.go('/driver/arrival');
-                    break;
-                  default:
-                    break;
-                }
-              },
-              icon: const Icon(Icons.play_arrow, size: 18),
-              label: Text('Resume Trip — ${trip.status.label}'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.emergencyRed,
-                side: const BorderSide(color: AppColors.emergencyRed),
-                shape: RoundedRectangleBorder(
-                  borderRadius: AppSpacing.borderRadiusSm,
+          if (trip.status == TripStatus.arrived) ...[
+            // Arrived — waiting for hospital, show non-actionable status
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.lifelineGreen.withValues(alpha: 0.1),
+                borderRadius: AppSpacing.borderRadiusSm,
+                border: Border.all(
+                  color: AppColors.lifelineGreen.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.lifelineGreen,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Waiting for hospital to confirm',
+                    style: AppTypography.bodyS.copyWith(
+                      color: AppColors.lifelineGreen,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ] else
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  switch (trip.status) {
+                    case TripStatus.vitals:
+                      context.go('/driver/hospital-select');
+                      break;
+                    case TripStatus.destinationLocked:
+                    case TripStatus.enRoute:
+                      context.go('/driver/navigation');
+                      break;
+                    default:
+                      break;
+                  }
+                },
+                icon: const Icon(Icons.play_arrow, size: 18),
+                label: Text('Resume Trip — ${trip.status.label}'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.emergencyRed,
+                  side: const BorderSide(color: AppColors.emergencyRed),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: AppSpacing.borderRadiusSm,
+                  ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );
