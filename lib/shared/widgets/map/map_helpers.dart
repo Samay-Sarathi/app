@@ -7,17 +7,19 @@ class MapHelpers {
   MapHelpers._();
 
   /// Applies dark map style when in dark mode.
-  /// The JSON already exists in [MapConfig.darkMapStyle] but was never used.
-  static Future<void> applyMapStyle(GoogleMapController controller, bool isDark) async {
-    if (isDark) {
-      await controller.setMapStyle(MapConfig.darkMapStyle);
-    } else {
-      await controller.setMapStyle(null);
-    }
+  static Future<void> applyMapStyle(
+    GoogleMapController controller,
+    bool isDark,
+  ) async {
+    // ignore: deprecated_member_use
+    await controller.setMapStyle(isDark ? MapConfig.darkMapStyle : null);
   }
 
   /// Creates a thicker route polyline with dark outline for visibility.
-  static Set<Polyline> createRoutePolyline(List<LatLng> points, {String id = 'route'}) {
+  static Set<Polyline> createRoutePolyline(
+    List<LatLng> points, {
+    String id = 'route',
+  }) {
     if (points.isEmpty) return {};
     return {
       // Dark outline

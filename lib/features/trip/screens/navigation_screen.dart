@@ -149,6 +149,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
     var trip = tripProvider.activeTrip;
 
     // If no trip in memory (app restarted mid-ride), fetch from backend
+    // tripProvider captured before await to avoid BuildContext async gap
     trip ??= await tripProvider.fetchActiveTrip();
     if (!mounted) return;
     if (trip == null || !trip.status.isActive) {
@@ -290,8 +291,9 @@ class _NavigationScreenState extends State<NavigationScreen> {
     }
 
     int remainingDist = 0;
-    for (int i = _currentStepIndex; i < steps.length; i++)
+    for (int i = _currentStepIndex; i < steps.length; i++) {
       remainingDist += steps[i].distanceMeters;
+    }
     int remainingTime = 0;
     if (_routeInfo!.totalDistanceMeters > 0) {
       remainingTime =
