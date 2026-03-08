@@ -1,4 +1,5 @@
 import 'dart:io' show Platform;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Global configuration for the LifeLine app.
 class AppConfig {
@@ -24,10 +25,9 @@ class AppConfig {
   /// Set to `true` once a real API key is in place.
   static const bool enableMaps = true;
 
-  /// Google Maps Directions API key.
-  /// DEV_ONLY: Move to dart-define or a secrets manager for production.
-  static const String googleMapsApiKey =
-      String.fromEnvironment('GOOGLE_MAPS_API_KEY', defaultValue: 'AIzaSyDzHb1NgOgvFx57hrthDDicKpAw03XY_V4');
+  /// Google Maps Directions API key — loaded from .env file.
+  static String get googleMapsApiKey =>
+      dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
 
   /// Request timeout in seconds.
   static const int connectTimeout = 10;

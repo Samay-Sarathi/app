@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../core/config/app_config.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -120,10 +119,7 @@ class _DriverAlertsTabState extends State<DriverAlertsTab> {
     final trip = context.watch<TripProvider>().activeTrip;
     final hasTrip = trip != null && trip.status.isActive;
 
-    // Dev-mode fallback alerts
-    final showDevAlerts = AppConfig.devMode && _alerts.isEmpty;
-
-    final alertCount = showDevAlerts ? 5 : _alerts.length;
+    final alertCount = _alerts.length;
 
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.spaceMd),
@@ -140,9 +136,7 @@ class _DriverAlertsTabState extends State<DriverAlertsTab> {
           ),
           const SizedBox(height: 20),
           Expanded(
-            child: showDevAlerts
-                ? _buildDevAlerts()
-                : _alerts.isEmpty
+            child: _alerts.isEmpty
                 ? _buildEmptyState()
                 : _buildRealAlerts(),
           ),
@@ -195,46 +189,6 @@ class _DriverAlertsTabState extends State<DriverAlertsTab> {
     );
   }
 
-  Widget _buildDevAlerts() {
-    return ListView(
-      children: const [
-        AlertItem(
-          type: AlertType.emergency,
-          title: 'Green Corridor Activated',
-          subtitle: 'Corridor active on Route 7 — Main Ave to Central Hospital',
-          time: '2 min ago',
-        ),
-        SizedBox(height: 12),
-        AlertItem(
-          type: AlertType.warning,
-          title: 'Traffic Congestion Ahead',
-          subtitle: 'Heavy traffic detected on Ring Road Sector 4',
-          time: '8 min ago',
-        ),
-        SizedBox(height: 12),
-        AlertItem(
-          type: AlertType.info,
-          title: 'Signal Sync Complete',
-          subtitle: '14 traffic signals synchronized on your route',
-          time: '15 min ago',
-        ),
-        SizedBox(height: 12),
-        AlertItem(
-          type: AlertType.success,
-          title: 'Shift Started',
-          subtitle: 'Your shift has been logged. Unit: Alpha-01',
-          time: '1 hr ago',
-        ),
-        SizedBox(height: 12),
-        AlertItem(
-          type: AlertType.info,
-          title: 'System Update Available',
-          subtitle: 'Samay Sarthi v1.1 is available for download',
-          time: '3 hr ago',
-        ),
-      ],
-    );
-  }
 }
 
 class _AlertEntry {

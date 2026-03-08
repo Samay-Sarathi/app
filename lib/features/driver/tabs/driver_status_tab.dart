@@ -4,7 +4,6 @@ import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
-import '../../../core/config/app_config.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -266,40 +265,6 @@ class _ActiveTripCard extends StatelessWidget {
               ),
             ),
           ),
-          // DEV_ONLY: Cancel trip button for testing
-          if (AppConfig.devMode) ...[
-            const SizedBox(height: 6),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () async {
-                  final tripProvider = context.read<TripProvider>();
-                  // Capture messenger before async gap — widget may unmount after cancel
-                  final messenger = ScaffoldMessenger.of(context);
-                  final cancelled = await tripProvider.cancelTrip(
-                    reason: 'DEV: Manual cancel',
-                  );
-                  if (cancelled) {
-                    messenger.showSnackBar(
-                      const SnackBar(
-                        content: Text('[DEV] Trip cancelled'),
-                        backgroundColor: AppColors.warmOrange,
-                      ),
-                    );
-                  }
-                },
-                icon: const Icon(Icons.bug_report, size: 16),
-                label: const Text('[DEV] Cancel Trip'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.warmOrange,
-                  side: const BorderSide(color: AppColors.warmOrange),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: AppSpacing.borderRadiusSm,
-                  ),
-                ),
-              ),
-            ),
-          ],
         ],
       ),
     );

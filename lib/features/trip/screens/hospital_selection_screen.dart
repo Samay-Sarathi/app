@@ -287,30 +287,6 @@ class _HospitalSelectionScreenState extends State<HospitalSelectionScreen> {
                 : MapPlaceholder.hospitalSelect(),
           ),
 
-          // DEV_ONLY: Cancel trip button for testing
-          if (AppConfig.devMode)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.spaceMd, vertical: 4),
-              child: SizedBox(
-                width: double.infinity,
-                height: 36,
-                child: OutlinedButton.icon(
-                  onPressed: () async {
-                    final tp = context.read<TripProvider>();
-                    final nav = GoRouter.of(context);
-                    await tp.cancelTrip(reason: 'DEV: Manual cancel');
-                    if (context.mounted) nav.go('/driver/dashboard');
-                  },
-                  icon: const Icon(Icons.bug_report, size: 14),
-                  label: const Text('[DEV] Cancel Trip', style: TextStyle(fontSize: 12)),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.warmOrange,
-                    side: const BorderSide(color: AppColors.warmOrange),
-                    padding: EdgeInsets.zero,
-                  ),
-                ),
-              ),
-            ),
 
           // Hospital list / detail
           if (hasRecs && selected != null)

@@ -7,7 +7,7 @@ import '../utils/polyline_decoder.dart';
 
 /// Fetches route directions from Google Directions API.
 class DirectionsService {
-  static const String _apiKey = AppConfig.googleMapsApiKey;
+  static String get _apiKey => AppConfig.googleMapsApiKey;
   static const String _baseUrl = 'https://maps.googleapis.com/maps/api/directions/json';
 
   final Dio _dio;

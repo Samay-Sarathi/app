@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../core/config/app_config.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../shared/widgets/buttons.dart';
 
@@ -96,28 +95,6 @@ class _SignInScreenState extends State<SignInScreen>
   }
 
   bool get _isAdmin => widget.role == 'admin';
-
-  /// Dev phone number (without +91 prefix) for quick-fill.
-  String get _devPhone {
-    switch (widget.role) {
-      case 'driver':
-        return '9999999999';
-      case 'hospital':
-        return '8888888888';
-      case 'police':
-        return '7777777777';
-      case 'admin':
-        return '6666666666';
-      default:
-        return '9999999999';
-    }
-  }
-
-  /// Auto-fill dev credentials and trigger login.
-  void _quickFillDev() {
-    _phoneController.text = _devPhone;
-    _passwordController.text = 'password123';
-  }
 
   // ── Actions ──
 
@@ -296,39 +273,6 @@ class _SignInScreenState extends State<SignInScreen>
                   isLoading: auth.isLoading,
                   onPressed:
                       auth.isLoading ? null : _handleLogin,
-                ),
-
-                const SizedBox(height: 12),
-
-                // DEV_ONLY: Quick-fill credentials for testing
-                if (AppConfig.devMode)
-                GestureDetector(
-                  onTap: auth.isLoading ? null : _quickFillDev,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    decoration: ShapeDecoration(
-                      shape: StadiumBorder(
-                        side: BorderSide(
-                          color: _roleColor.withValues(alpha: 0.3),
-                        ),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.bug_report_outlined,
-                            size: 16, color: _roleColor),
-                        const SizedBox(width: 8),
-                        Text(
-                          '[DEV] Quick Fill',
-                          style: AppTypography.bodyS.copyWith(
-                            color: _roleColor,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                 ),
 
                 const SizedBox(height: 28),

@@ -59,6 +59,14 @@ class _NavigationScreenState extends State<NavigationScreen> {
   bool _isNearHospital = false;
   static const double _arrivalRadiusMeters = 500;
 
+  // Smooth marker animation
+  Timer? _markerAnimTimer;
+  LatLng? _animStartLocation;
+  LatLng? _animEndLocation;
+  int _animStep = 0;
+  static const int _animTotalSteps = 20;
+  static const Duration _animStepDuration = Duration(milliseconds: 50);
+
   // Trip cancellation banner
   bool _showCancelBanner = false;
   int _cancelCountdown = 3;
@@ -247,24 +255,12 @@ class _NavigationScreenState extends State<NavigationScreen> {
 
           setState(() {
             _currentSpeed = isMoving ? rawSpeedKmh : 0;
-            if (isMoving) _currentLocation = newLocation;
           });
 
           if (isMoving) {
+            _animateMarkerTo(newLocation);
             _updateCurrentStep(newLocation);
             _checkProximity(newLocation);
-            if (_isFollowingUser && _mapController != null) {
-              _mapController!.animateCamera(
-                CameraUpdate.newCameraPosition(
-                  CameraPosition(
-                    target: newLocation,
-                    zoom: 17.5,
-                    tilt: 55,
-                    bearing: _currentHeading,
-                  ),
-                ),
-              );
-            }
           }
 
           ws.send('/app/trip/${trip.id}/location', {
@@ -275,6 +271,51 @@ class _NavigationScreenState extends State<NavigationScreen> {
             'accuracy': position.accuracy,
           });
         });
+  }
+
+  /// Smoothly interpolate the driver marker from current to new position.
+  void _animateMarkerTo(LatLng destination) {
+    _markerAnimTimer?.cancel();
+    _animStartLocation = _currentLocation ?? destination;
+    _animEndLocation = destination;
+    _animStep = 0;
+
+    _markerAnimTimer = Timer.periodic(_animStepDuration, (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      _animStep++;
+      // Ease-out curve for natural deceleration
+      final t = _animStep / _animTotalSteps;
+      final eased = 1 - (1 - t) * (1 - t); // quadratic ease-out
+
+      final lat = _animStartLocation!.latitude +
+          (destination.latitude - _animStartLocation!.latitude) * eased;
+      final lng = _animStartLocation!.longitude +
+          (destination.longitude - _animStartLocation!.longitude) * eased;
+      final interpolated = LatLng(lat, lng);
+
+      setState(() => _currentLocation = interpolated);
+
+      if (_isFollowingUser && _mapController != null) {
+        _mapController!.animateCamera(
+          CameraUpdate.newCameraPosition(
+            CameraPosition(
+              target: interpolated,
+              zoom: 17.5,
+              tilt: 55,
+              bearing: _currentHeading,
+            ),
+          ),
+        );
+      }
+
+      if (_animStep >= _animTotalSteps) {
+        timer.cancel();
+        setState(() => _currentLocation = destination);
+      }
+    });
   }
 
   void _updateCurrentStep(LatLng pos) {
@@ -410,6 +451,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
 
   @override
   void dispose() {
+    _markerAnimTimer?.cancel();
     _compassSub?.cancel();
     _locationSub?.cancel();
     if (_subscribedTripTopic != null) {
@@ -647,22 +689,6 @@ class _NavigationScreenState extends State<NavigationScreen> {
                   onTap: () => context.go('/driver/arrival'),
                 ),
               ),
-              if (AppConfig.devMode) ...[
-                const SizedBox(width: 10),
-                Expanded(
-                  child: MapActionButton(
-                    icon: Icons.bug_report,
-                    label: '[DEV] Cancel',
-                    color: AppColors.warmOrange,
-                    onTap: () async {
-                      final tp = context.read<TripProvider>();
-                      final nav = GoRouter.of(context);
-                      await tp.cancelTrip(reason: 'DEV: Manual cancel');
-                      if (context.mounted) nav.go('/driver/dashboard');
-                    },
-                  ),
-                ),
-              ],
             ],
           ),
         ],
