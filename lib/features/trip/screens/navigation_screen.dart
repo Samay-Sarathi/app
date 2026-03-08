@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:geolocator/geolocator.dart';
@@ -81,10 +82,19 @@ class _NavigationScreenState extends State<NavigationScreen> {
       // Only update if heading changed meaningfully (>2°) to avoid jitter
       if ((heading - _currentHeading).abs() > 2) {
         setState(() => _currentHeading = heading);
-        if (_isFollowingUser && _mapController != null && _currentLocation != null) {
-          _mapController!.animateCamera(CameraUpdate.newCameraPosition(
-            CameraPosition(target: _currentLocation!, zoom: 17.5, tilt: 55, bearing: heading),
-          ));
+        if (_isFollowingUser &&
+            _mapController != null &&
+            _currentLocation != null) {
+          _mapController!.animateCamera(
+            CameraUpdate.newCameraPosition(
+              CameraPosition(
+                target: _currentLocation!,
+                zoom: 17.5,
+                tilt: 55,
+                bearing: heading,
+              ),
+            ),
+          );
         }
       }
     });
@@ -119,7 +129,10 @@ class _NavigationScreenState extends State<NavigationScreen> {
     }
     if (permission == LocationPermission.denied ||
         permission == LocationPermission.deniedForever) {
-      setState(() { _routeLoading = false; _routeError = 'Location permission denied'; });
+      setState(() {
+        _routeLoading = false;
+        _routeError = 'Location permission denied';
+      });
       return;
     }
 
@@ -139,21 +152,33 @@ class _NavigationScreenState extends State<NavigationScreen> {
     trip ??= await tripProvider.fetchActiveTrip();
     if (!mounted) return;
     if (trip == null || !trip.status.isActive) {
-      setState(() { _routeLoading = false; _routeError = 'No active trip'; });
+      setState(() {
+        _routeLoading = false;
+        _routeError = 'No active trip';
+      });
       return;
     }
 
     final destination = _getHospitalLocation();
     if (destination == null) {
-      setState(() { _routeLoading = false; _routeError = 'No hospital destination'; });
+      setState(() {
+        _routeLoading = false;
+        _routeError = 'No hospital destination';
+      });
       return;
     }
 
-    final route = await _directionsService.getRoute(origin: _currentLocation!, destination: destination);
+    final route = await _directionsService.getRoute(
+      origin: _currentLocation!,
+      destination: destination,
+    );
     if (!mounted) return;
 
     if (route == null) {
-      setState(() { _routeLoading = false; _routeError = 'Could not fetch route'; });
+      setState(() {
+        _routeLoading = false;
+        _routeError = 'Could not fetch route';
+      });
     } else {
       setState(() {
         _routeInfo = route;
@@ -169,15 +194,30 @@ class _NavigationScreenState extends State<NavigationScreen> {
   }
 
   void _fitRouteBounds(RouteInfo route) {
-    _mapController?.animateCamera(CameraUpdate.newLatLngBounds(
-      LatLngBounds(northeast: route.boundsNortheast, southwest: route.boundsSouthwest), 60));
+    _mapController?.animateCamera(
+      CameraUpdate.newLatLngBounds(
+        LatLngBounds(
+          northeast: route.boundsNortheast,
+          southwest: route.boundsSouthwest,
+        ),
+        60,
+      ),
+    );
   }
 
   void _snapToUser() {
     if (_currentLocation == null || _mapController == null) return;
     setState(() => _isFollowingUser = true);
-    _mapController!.animateCamera(CameraUpdate.newCameraPosition(
-      CameraPosition(target: _currentLocation!, zoom: 17.5, tilt: 55, bearing: _currentHeading)));
+    _mapController!.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(
+          target: _currentLocation!,
+          zoom: 17.5,
+          tilt: 55,
+          bearing: _currentHeading,
+        ),
+      ),
+    );
   }
 
   // ── Location Streaming ──
@@ -187,38 +227,53 @@ class _NavigationScreenState extends State<NavigationScreen> {
     if (trip == null) return;
     final ws = context.read<WebSocketService>();
 
-    _locationSub = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(accuracy: LocationAccuracy.bestForNavigation, distanceFilter: 10),
-    ).listen((position) {
-      if (!mounted) return;
+    _locationSub =
+        Geolocator.getPositionStream(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.bestForNavigation,
+            distanceFilter: 10,
+          ),
+        ).listen((position) {
+          if (!mounted) return;
 
-      // Skip inaccurate readings (GPS noise)
-      if (position.accuracy > 20) return;
+          // Skip inaccurate readings (GPS noise)
+          if (position.accuracy > 20) return;
 
-      // Small threshold to filter GPS noise when truly stationary.
-      final rawSpeedKmh = position.speed * 3.6;
-      final isMoving = rawSpeedKmh > 4;
-      final newLocation = LatLng(position.latitude, position.longitude);
+          // Small threshold to filter GPS noise when truly stationary.
+          final rawSpeedKmh = position.speed * 3.6;
+          final isMoving = rawSpeedKmh > 4;
+          final newLocation = LatLng(position.latitude, position.longitude);
 
-      setState(() {
-        _currentSpeed = isMoving ? rawSpeedKmh : 0;
-        if (isMoving) _currentLocation = newLocation;
-      });
+          setState(() {
+            _currentSpeed = isMoving ? rawSpeedKmh : 0;
+            if (isMoving) _currentLocation = newLocation;
+          });
 
-      if (isMoving) {
-        _updateCurrentStep(newLocation);
-        _checkProximity(newLocation);
-        if (_isFollowingUser && _mapController != null) {
-          _mapController!.animateCamera(CameraUpdate.newCameraPosition(
-            CameraPosition(target: newLocation, zoom: 17.5, tilt: 55, bearing: _currentHeading)));
-        }
-      }
+          if (isMoving) {
+            _updateCurrentStep(newLocation);
+            _checkProximity(newLocation);
+            if (_isFollowingUser && _mapController != null) {
+              _mapController!.animateCamera(
+                CameraUpdate.newCameraPosition(
+                  CameraPosition(
+                    target: newLocation,
+                    zoom: 17.5,
+                    tilt: 55,
+                    bearing: _currentHeading,
+                  ),
+                ),
+              );
+            }
+          }
 
-      ws.send('/app/trip/${trip.id}/location', {
-        'latitude': position.latitude, 'longitude': position.longitude,
-        'heading': _currentHeading, 'speed': position.speed, 'accuracy': position.accuracy,
-      });
-    });
+          ws.send('/app/trip/${trip.id}/location', {
+            'latitude': position.latitude,
+            'longitude': position.longitude,
+            'heading': _currentHeading,
+            'speed': position.speed,
+            'accuracy': position.accuracy,
+          });
+        });
   }
 
   void _updateCurrentStep(LatLng pos) {
@@ -226,18 +281,29 @@ class _NavigationScreenState extends State<NavigationScreen> {
     final steps = _routeInfo!.steps;
     if (_currentStepIndex >= steps.length) return;
 
-    final distToEnd = NavigationHelpers.haversineDistance(pos, steps[_currentStepIndex].endLocation);
+    final distToEnd = NavigationHelpers.haversineDistance(
+      pos,
+      steps[_currentStepIndex].endLocation,
+    );
     if (distToEnd < 30 && _currentStepIndex < steps.length - 1) {
       setState(() => _currentStepIndex++);
     }
 
     int remainingDist = 0;
-    for (int i = _currentStepIndex; i < steps.length; i++) remainingDist += steps[i].distanceMeters;
+    for (int i = _currentStepIndex; i < steps.length; i++)
+      remainingDist += steps[i].distanceMeters;
     int remainingTime = 0;
     if (_routeInfo!.totalDistanceMeters > 0) {
-      remainingTime = (remainingDist / _routeInfo!.totalDistanceMeters * _routeInfo!.totalDurationSeconds).round();
+      remainingTime =
+          (remainingDist /
+                  _routeInfo!.totalDistanceMeters *
+                  _routeInfo!.totalDurationSeconds)
+              .round();
     }
-    setState(() { _remainingDistanceMeters = remainingDist; _remainingDurationSeconds = remainingTime; });
+    setState(() {
+      _remainingDistanceMeters = remainingDist;
+      _remainingDurationSeconds = remainingTime;
+    });
   }
 
   void _checkProximity(LatLng pos) {
@@ -310,12 +376,18 @@ class _NavigationScreenState extends State<NavigationScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
-            const Icon(Icons.warning_amber_rounded, color: AppColors.emergencyRed),
+            const Icon(
+              Icons.warning_amber_rounded,
+              color: AppColors.emergencyRed,
+            ),
             const SizedBox(width: 10),
             const Expanded(child: Text('Hospital Rejected')),
           ],
         ),
-        content: Text(reason ?? 'The hospital has rejected your request. Please select another hospital.'),
+        content: Text(
+          reason ??
+              'The hospital has rejected your request. Please select another hospital.',
+        ),
         actions: [
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -339,7 +411,9 @@ class _NavigationScreenState extends State<NavigationScreen> {
     _compassSub?.cancel();
     _locationSub?.cancel();
     if (_subscribedTripTopic != null) {
-      try { context.read<WebSocketService>().unsubscribe(_subscribedTripTopic!); } catch (_) {}
+      try {
+        context.read<WebSocketService>().unsubscribe(_subscribedTripTopic!);
+      } catch (_) {}
     }
     _mapController?.dispose();
     super.dispose();
@@ -351,9 +425,12 @@ class _NavigationScreenState extends State<NavigationScreen> {
     final tp = context.read<TripProvider>();
     final hs = tp.handshakeResult;
     final trip = tp.activeTrip;
-    if (hs != null && hs.hospitalLatitude != 0) return LatLng(hs.hospitalLatitude, hs.hospitalLongitude);
-    if (trip?.hospitalLatitude != null) return LatLng(trip!.hospitalLatitude!, trip.hospitalLongitude!);
-    if (tp.selectedHospitalLat != null) return LatLng(tp.selectedHospitalLat!, tp.selectedHospitalLng!);
+    if (hs != null && hs.hospitalLatitude != 0)
+      return LatLng(hs.hospitalLatitude, hs.hospitalLongitude);
+    if (trip?.hospitalLatitude != null)
+      return LatLng(trip!.hospitalLatitude!, trip.hospitalLongitude!);
+    if (tp.selectedHospitalLat != null)
+      return LatLng(tp.selectedHospitalLat!, tp.selectedHospitalLng!);
     return null;
   }
 
@@ -364,7 +441,8 @@ class _NavigationScreenState extends State<NavigationScreen> {
     final tripProvider = context.watch<TripProvider>();
     final trip = tripProvider.activeTrip;
     final handshake = tripProvider.handshakeResult;
-    final hospitalName = handshake?.hospitalName ?? trip?.hospitalName ?? 'Hospital';
+    final hospitalName =
+        handshake?.hospitalName ?? trip?.hospitalName ?? 'Hospital';
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Current navigation step
@@ -381,24 +459,32 @@ class _NavigationScreenState extends State<NavigationScreen> {
     final markers = <Marker>{};
     final hospitalLoc = _getHospitalLocation();
     if (hospitalLoc != null) {
-      markers.add(Marker(
-        markerId: const MarkerId('hospital'),
-        position: hospitalLoc,
-        icon: _hospitalIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-        infoWindow: InfoWindow(title: hospitalName),
-      ));
+      markers.add(
+        Marker(
+          markerId: const MarkerId('hospital'),
+          position: hospitalLoc,
+          icon:
+              _hospitalIcon ??
+              BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+          infoWindow: InfoWindow(title: hospitalName),
+        ),
+      );
     }
 
     // Driver arrow — rotates with heading like Google Maps navigation
     if (_currentLocation != null) {
-      markers.add(Marker(
-        markerId: const MarkerId('driver'),
-        position: _currentLocation!,
-        icon: _userArrowIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-        rotation: _currentHeading,
-        flat: true,
-        anchor: const Offset(0.5, 0.5),
-      ));
+      markers.add(
+        Marker(
+          markerId: const MarkerId('driver'),
+          position: _currentLocation!,
+          icon:
+              _userArrowIcon ??
+              BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+          rotation: _currentHeading,
+          flat: true,
+          anchor: const Offset(0.5, 0.5),
+        ),
+      );
     }
 
     // Route polyline — enhanced with dark outline
@@ -414,7 +500,9 @@ class _NavigationScreenState extends State<NavigationScreen> {
             GoogleMap(
               initialCameraPosition: CameraPosition(
                 target: _currentLocation ?? const LatLng(12.8456, 77.6603),
-                zoom: 17.5, tilt: 55, bearing: _currentHeading,
+                zoom: 17.5,
+                tilt: 55,
+                bearing: _currentHeading,
               ),
               markers: markers,
               polylines: polylines,
@@ -435,7 +523,9 @@ class _NavigationScreenState extends State<NavigationScreen> {
 
           // ── Turn instruction banner ──
           Positioned(
-            top: 0, left: 0, right: 0,
+            top: 0,
+            left: 0,
+            right: 0,
             child: TurnBanner(
               currentStep: currentStep,
               nextStep: nextStep,
@@ -446,7 +536,8 @@ class _NavigationScreenState extends State<NavigationScreen> {
 
           // ── Recenter FAB ──
           Positioned(
-            right: 16, bottom: 260,
+            right: 16,
+            bottom: 260,
             child: FloatingActionButton.small(
               heroTag: 'recenter',
               onPressed: _snapToUser,
@@ -454,7 +545,9 @@ class _NavigationScreenState extends State<NavigationScreen> {
               elevation: 4,
               child: Icon(
                 _isFollowingUser ? Icons.my_location : Icons.location_searching,
-                color: _isFollowingUser ? AppColors.navBlueSoft : AppColors.mediumGray,
+                color: _isFollowingUser
+                    ? AppColors.navBlueSoft
+                    : AppColors.mediumGray,
                 size: 22,
               ),
             ),
@@ -462,33 +555,60 @@ class _NavigationScreenState extends State<NavigationScreen> {
 
           // ── Trip Cancelled Banner ──
           if (_showCancelBanner)
-            Positioned(
-              top: 0, left: 0, right: 0, bottom: 0,
-              child: Container(
-                color: Colors.black54,
-                child: Center(
-                  child: Container(
-                    margin: const EdgeInsets.all(32),
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: AppColors.emergencyRed,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.cancel, size: 48, color: AppColors.white),
-                        const SizedBox(height: 12),
-                        const Text(
-                          'TRIP CANCELLED',
-                          style: TextStyle(color: AppColors.white, fontSize: 24, fontWeight: FontWeight.w800),
+            Positioned.fill(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                child: Container(
+                  color: Colors.black.withValues(alpha: 0.45),
+                  child: Center(
+                    child: Container(
+                      margin: const EdgeInsets.all(32),
+                      padding: const EdgeInsets.all(28),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.65),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: AppColors.emergencyRed.withValues(alpha: 0.6),
+                          width: 1.5,
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Redirecting in $_cancelCountdown...',
-                          style: const TextStyle(color: AppColors.white, fontSize: 16),
-                        ),
-                      ],
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.emergencyRed.withValues(
+                              alpha: 0.3,
+                            ),
+                            blurRadius: 32,
+                            spreadRadius: 4,
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.cancel,
+                            size: 56,
+                            color: AppColors.emergencyRed,
+                          ),
+                          const SizedBox(height: 14),
+                          const Text(
+                            'TRIP CANCELLED',
+                            style: TextStyle(
+                              color: AppColors.white,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            'Redirecting in $_cancelCountdown...',
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -502,30 +622,44 @@ class _NavigationScreenState extends State<NavigationScreen> {
             currentSpeed: _currentSpeed,
             destinationName: hospitalName,
             destinationIcon: Icons.local_hospital,
-            destinationIconColor: _corridorActive ? AppColors.lifelineGreen : AppColors.emergencyRed,
+            destinationIconColor: _corridorActive
+                ? AppColors.lifelineGreen
+                : AppColors.emergencyRed,
             actions: [
-              Expanded(child: MapActionButton(
-                icon: Icons.qr_code_2, label: 'QR Handoff', color: AppColors.calmPurple,
-                onTap: () => showQrHandoffSheet(context, trip),
-              )),
+              Expanded(
+                child: MapActionButton(
+                  icon: Icons.qr_code_2,
+                  label: 'QR Handoff',
+                  color: AppColors.calmPurple,
+                  onTap: () => showQrHandoffSheet(context, trip),
+                ),
+              ),
               const SizedBox(width: 10),
-              Expanded(child: MapActionButton(
-                icon: _isNearHospital ? Icons.check_circle : Icons.flag,
-                label: _isNearHospital ? 'Arrive' : 'End Trip',
-                color: _isNearHospital ? AppColors.lifelineGreen : AppColors.warmOrange,
-                onTap: () => context.go('/driver/arrival'),
-              )),
+              Expanded(
+                child: MapActionButton(
+                  icon: _isNearHospital ? Icons.check_circle : Icons.flag,
+                  label: _isNearHospital ? 'Arrive' : 'End Trip',
+                  color: _isNearHospital
+                      ? AppColors.lifelineGreen
+                      : AppColors.warmOrange,
+                  onTap: () => context.go('/driver/arrival'),
+                ),
+              ),
               if (AppConfig.devMode) ...[
                 const SizedBox(width: 10),
-                Expanded(child: MapActionButton(
-                  icon: Icons.bug_report, label: '[DEV] Cancel', color: AppColors.warmOrange,
-                  onTap: () async {
-                    final tp = context.read<TripProvider>();
-                    final nav = GoRouter.of(context);
-                    await tp.cancelTrip(reason: 'DEV: Manual cancel');
-                    if (context.mounted) nav.go('/driver/dashboard');
-                  },
-                )),
+                Expanded(
+                  child: MapActionButton(
+                    icon: Icons.bug_report,
+                    label: '[DEV] Cancel',
+                    color: AppColors.warmOrange,
+                    onTap: () async {
+                      final tp = context.read<TripProvider>();
+                      final nav = GoRouter.of(context);
+                      await tp.cancelTrip(reason: 'DEV: Manual cancel');
+                      if (context.mounted) nav.go('/driver/dashboard');
+                    },
+                  ),
+                ),
               ],
             ],
           ),
