@@ -28,6 +28,14 @@ class _MotivationalGreetingState extends State<MotivationalGreeting>
     _Msg('జీవితాలను రక్షించండి', 'తెలుగు'),
     _Msg('সময়ই জীবন', 'বাংলা'),
     _Msg('ਸਮਾਂ ਹੀ ਜ਼ਿੰਦਗੀ ਹੈ', 'ਪੰਜਾਬੀ'),
+    _Msg('દરેક ક્ષણ કિંમતી છે', 'ગુજરાતી'),
+    _Msg('प्रत्येक क्षण मौल्यवान आहे', 'मराठी'),
+    _Msg('ഓരോ നിമിഷവും വിലപ്പെട്ടതാണ്', 'മലയാളം'),
+    _Msg('ପ୍ରତ୍ୟେକ ମୁହୂର୍ତ ମୂଲ୍ୟବାନ', 'ଓଡ଼ିଆ'),
+    _Msg('ہر لمحہ قیمتی ہے', 'اردو'),
+    _Msg('समय ही सारथी है', 'हिन्दी'),
+    _Msg('Be the Reason Someone Survives', 'English'),
+    _Msg('సమయమే జీవితం', 'తెలుగు'),
   ];
 
   int _currentIndex = 0;
@@ -47,9 +55,10 @@ class _MotivationalGreetingState extends State<MotivationalGreeting>
       parent: _controller,
       curve: Curves.easeInOut,
     );
-    _scaleAnimation = Tween<double>(begin: 0.92, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 0.92,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
     _controller.forward();
     _startRotation();
   }

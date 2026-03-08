@@ -35,13 +35,15 @@ class NavBottomSheet extends StatelessWidget {
     // Glass colours — dark mode: charcoal-tinted, light mode: white-tinted
     final glassColor = isDark
         ? Colors.black.withValues(alpha: 0.55)
-        : Colors.white.withValues(alpha: 0.60);
+        : Colors.white.withValues(
+            alpha: 0.82,
+          ); // more opaque in light = better contrast
     final borderColor = isDark
         ? Colors.white.withValues(alpha: 0.10)
-        : Colors.white.withValues(alpha: 0.80);
+        : Colors.black.withValues(alpha: 0.12); // visible border in light mode
     final pillColor = isDark
         ? Colors.white.withValues(alpha: 0.10)
-        : Colors.black.withValues(alpha: 0.06);
+        : Colors.black.withValues(alpha: 0.06); // destination/speed pill bg
     final textSecondary = isDark ? Colors.white60 : Colors.black54;
 
     return DraggableScrollableSheet(

@@ -20,8 +20,8 @@ class MapActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = color.withValues(alpha: isDark ? 0.15 : 0.10);
-    final borderColor = color.withValues(alpha: isDark ? 0.35 : 0.25);
+    final bgColor = color.withValues(alpha: isDark ? 0.15 : 0.22);
+    final borderColor = color.withValues(alpha: isDark ? 0.35 : 0.55);
 
     return GestureDetector(
       onTap: onTap,

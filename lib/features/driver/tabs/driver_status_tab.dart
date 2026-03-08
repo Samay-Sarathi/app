@@ -16,6 +16,7 @@ import '../../../core/models/trip_status.dart';
 import '../../../shared/widgets/dashboard_header.dart';
 import '../../../shared/widgets/stat_card.dart';
 import '../../../shared/widgets/status_badge.dart';
+import '../../../shared/widgets/motivational_greeting.dart';
 
 /// Driver Status tab — live GPS speed, connectivity readiness, active trip card.
 class DriverStatusTab extends StatefulWidget {
@@ -46,15 +47,16 @@ class _DriverStatusTabState extends State<DriverStatusTab> {
       await Geolocator.requestPermission();
     }
 
-    _positionSub = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 5,
-      ),
-    ).listen((position) {
-      if (!mounted) return;
-      setState(() => _speedMps = position.speed.clamp(0, double.infinity));
-    });
+    _positionSub =
+        Geolocator.getPositionStream(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: 5,
+          ),
+        ).listen((position) {
+          if (!mounted) return;
+          setState(() => _speedMps = position.speed.clamp(0, double.infinity));
+        });
   }
 
   @override
@@ -78,8 +80,9 @@ class _DriverStatusTabState extends State<DriverStatusTab> {
     final trip = tripProvider.activeTrip;
 
     final readinessLabel = connectivity.isOnline ? 'Ready' : 'Offline';
-    final readinessColor =
-        connectivity.isOnline ? AppColors.lifelineGreen : AppColors.emergencyRed;
+    final readinessColor = connectivity.isOnline
+        ? AppColors.lifelineGreen
+        : AppColors.emergencyRed;
 
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.spaceMd),
@@ -90,10 +93,11 @@ class _DriverStatusTabState extends State<DriverStatusTab> {
             roleIcon: Icons.local_shipping,
             roleColor: AppColors.medicalBlue,
             roleTitle: 'Driver',
-            userName:
-                auth.fullName.isNotEmpty ? auth.fullName : 'Ambulance Driver',
+            userName: auth.fullName.isNotEmpty
+                ? auth.fullName
+                : 'Ambulance Driver',
             badgeStatus: BadgeStatus.active,
-            badgeLabel: 'SYSTEM ONLINE',
+            badgeLabel: 'SAMAY SARTHI',
           ),
           const SizedBox(height: 16),
 
@@ -108,7 +112,8 @@ class _DriverStatusTabState extends State<DriverStatusTab> {
             children: [
               Expanded(
                 child: StatCard(
-                  value: '${_formattedSpeed(settings.useKmh)}${settings.speedUnit}',
+                  value:
+                      '${_formattedSpeed(settings.useKmh)}${settings.speedUnit}',
                   label: 'Speed',
                   color: AppColors.medicalBlue,
                   icon: Icons.speed,
@@ -154,7 +159,8 @@ class _DriverStatusTabState extends State<DriverStatusTab> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: StatCard(
-                    value: '${tripProvider.distanceCoveredKm.toStringAsFixed(1)}km',
+                    value:
+                        '${tripProvider.distanceCoveredKm.toStringAsFixed(1)}km',
                     label: 'Distance',
                     color: AppColors.medicalBlue,
                     icon: Icons.route,
@@ -163,7 +169,15 @@ class _DriverStatusTabState extends State<DriverStatusTab> {
               ],
             ),
           ),
-          const Spacer(),
+          // Motivational greeting — multilingual rotating widget
+          const Expanded(
+            child: Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: MotivationalGreeting(),
+              ),
+            ),
+          ),
 
           // Emergency button
           SizedBox(
@@ -172,8 +186,14 @@ class _DriverStatusTabState extends State<DriverStatusTab> {
             child: ElevatedButton.icon(
               onPressed: () => context.go('/driver/emergency-case'),
               icon: const Icon(Icons.warning_amber_rounded),
-              label: const Text('Start Emergency',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              label: const Text(
+                'Start Emergency Response',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.3,
+                ),
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.emergencyRed,
                 foregroundColor: AppColors.white,
@@ -202,7 +222,8 @@ class _ActiveTripCard extends StatelessWidget {
         color: cardColor,
         borderRadius: AppSpacing.borderRadiusLg,
         border: Border(
-            left: BorderSide(color: AppColors.emergencyRed, width: 3)),
+          left: BorderSide(color: AppColors.emergencyRed, width: 3),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -210,7 +231,9 @@ class _ActiveTripCard extends StatelessWidget {
           Text(
             'Active: ${trip.incidentType.label} — ${trip.status.label}',
             style: AppTypography.bodyS.copyWith(
-                color: AppColors.emergencyRed, fontWeight: FontWeight.w600),
+              color: AppColors.emergencyRed,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(height: 12),
           SizedBox(
@@ -238,7 +261,8 @@ class _ActiveTripCard extends StatelessWidget {
                 foregroundColor: AppColors.emergencyRed,
                 side: const BorderSide(color: AppColors.emergencyRed),
                 shape: RoundedRectangleBorder(
-                    borderRadius: AppSpacing.borderRadiusSm),
+                  borderRadius: AppSpacing.borderRadiusSm,
+                ),
               ),
             ),
           ),
@@ -252,8 +276,9 @@ class _ActiveTripCard extends StatelessWidget {
                   final tripProvider = context.read<TripProvider>();
                   // Capture messenger before async gap — widget may unmount after cancel
                   final messenger = ScaffoldMessenger.of(context);
-                  final cancelled =
-                      await tripProvider.cancelTrip(reason: 'DEV: Manual cancel');
+                  final cancelled = await tripProvider.cancelTrip(
+                    reason: 'DEV: Manual cancel',
+                  );
                   if (cancelled) {
                     messenger.showSnackBar(
                       const SnackBar(
@@ -269,7 +294,8 @@ class _ActiveTripCard extends StatelessWidget {
                   foregroundColor: AppColors.warmOrange,
                   side: const BorderSide(color: AppColors.warmOrange),
                   shape: RoundedRectangleBorder(
-                      borderRadius: AppSpacing.borderRadiusSm),
+                    borderRadius: AppSpacing.borderRadiusSm,
+                  ),
                 ),
               ),
             ),
