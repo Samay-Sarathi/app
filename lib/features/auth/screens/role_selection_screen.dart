@@ -44,23 +44,37 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
               ),
               const SizedBox(height: 12),
               Text(
-                'LIFELINE',
+                'SAMAY SARTHI',
                 style: GoogleFonts.poppins(
-                  fontSize: 28,
+                  fontSize: 26,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 3,
                   color: onSurface,
                 ),
               ),
+              const SizedBox(height: 2),
+              Text(
+                'समय सारथी',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1.5,
+                  color: AppColors.mediumGray.withValues(alpha: 0.7),
+                ),
+              ),
               const SizedBox(height: 4),
               Text(
                 'Emergency Access Portal',
-                style: AppTypography.bodyS.copyWith(color: AppColors.mediumGray),
+                style: AppTypography.bodyS.copyWith(
+                  color: AppColors.mediumGray,
+                ),
               ),
               const SizedBox(height: 4),
               Text(
                 'Every Second Counts \u2014 Emergency Response at Your Fingertips',
-                style: AppTypography.bodyS.copyWith(color: AppColors.mediumGray),
+                style: AppTypography.bodyS.copyWith(
+                  color: AppColors.mediumGray,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
@@ -102,19 +116,29 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
               const SizedBox(height: 16),
               Row(
                 children: [
-                  const Icon(Icons.language, size: 18, color: AppColors.mediumGray),
+                  const Icon(
+                    Icons.language,
+                    size: 18,
+                    color: AppColors.mediumGray,
+                  ),
                   const SizedBox(width: 8),
                   DropdownButton<String>(
                     value: _selectedLanguage,
                     underline: const SizedBox.shrink(),
-                    style: AppTypography.bodyS.copyWith(color: AppColors.mediumGray),
+                    style: AppTypography.bodyS.copyWith(
+                      color: AppColors.mediumGray,
+                    ),
                     dropdownColor: Theme.of(context).colorScheme.surface,
                     items: const [
-                      DropdownMenuItem(value: 'English', child: Text('English')),
+                      DropdownMenuItem(
+                        value: 'English',
+                        child: Text('English'),
+                      ),
                       DropdownMenuItem(value: 'Hindi', child: Text('Hindi')),
                     ],
                     onChanged: (value) {
-                      if (value != null) setState(() => _selectedLanguage = value);
+                      if (value != null)
+                        setState(() => _selectedLanguage = value);
                     },
                   ),
                 ],
@@ -122,7 +146,9 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
               const SizedBox(height: 8),
               Text(
                 'Emergency: 108',
-                style: AppTypography.caption.copyWith(color: AppColors.mediumGray),
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.mediumGray,
+                ),
               ),
             ],
           ),
@@ -165,7 +191,9 @@ class _RoleCard extends StatelessWidget {
           borderRadius: AppSpacing.borderRadiusCard,
           boxShadow: isDark ? AppSpacing.shadowSmDark : AppSpacing.shadowSm,
           border: Border.all(
-            color: isDark ? AppColors.cardBorderDark : AppColors.cardBorderLight,
+            color: isDark
+                ? AppColors.cardBorderDark
+                : AppColors.cardBorderLight,
           ),
         ),
         child: Column(

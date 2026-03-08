@@ -26,9 +26,10 @@ class AboutScreen extends StatelessWidget {
                   children: [
                     Icon(Icons.arrow_back, color: onSurface),
                     const SizedBox(width: 12),
-                    Text('About LifeLine',
-                        style: AppTypography.heading3
-                            .copyWith(color: onSurface)),
+                    Text(
+                      'About Samay Sarthi',
+                      style: AppTypography.heading3.copyWith(color: onSurface),
+                    ),
                   ],
                 ),
               ),
@@ -42,13 +43,29 @@ class AboutScreen extends StatelessWidget {
                         children: [
                           const LifelineLogo(size: 80),
                           const SizedBox(height: 16),
-                          Text('LifeLine',
-                              style: AppTypography.heading2
-                                  .copyWith(color: onSurface)),
+                          Text(
+                            'Samay Sarthi',
+                            style: AppTypography.heading2.copyWith(
+                              color: onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'समय सारथी',
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.mediumGray.withValues(
+                                alpha: 0.7,
+                              ),
+                              letterSpacing: 1.5,
+                            ),
+                          ),
                           const SizedBox(height: 4),
-                          Text('Version 1.0.0',
-                              style: AppTypography.caption
-                                  .copyWith(color: AppColors.mediumGray)),
+                          Text(
+                            'Version 1.0.0',
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.mediumGray,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -62,68 +79,89 @@ class AboutScreen extends StatelessWidget {
                         borderRadius: AppSpacing.borderRadiusMd,
                       ),
                       child: Text(
-                        'LifeLine is an intelligent emergency response system that '
-                        'connects ambulance drivers, hospitals, paramedics, and '
+                        'Samay Sarthi (समय सारथी) is an intelligent emergency response '
+                        'system that connects ambulance drivers, hospitals, paramedics, and '
                         'traffic police for faster, coordinated emergency care. '
                         'Using real-time GPS tracking, smart hospital matching, '
-                        'and green corridor management, LifeLine aims to reduce '
+                        'and green corridor management, Samay Sarthi aims to reduce '
                         'emergency response times and save lives.',
-                        style: AppTypography.bodyS
-                            .copyWith(color: onSurface, height: 1.6),
+                        style: AppTypography.bodyS.copyWith(
+                          color: onSurface,
+                          height: 1.6,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 24),
 
                     // Key features
-                    Text('KEY FEATURES',
-                        style: AppTypography.overline.copyWith(
-                            color: AppColors.mediumGray, letterSpacing: 1.5)),
+                    Text(
+                      'KEY FEATURES',
+                      style: AppTypography.overline.copyWith(
+                        color: AppColors.mediumGray,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     _FeatureRow(
-                        icon: Icons.navigation,
-                        label: 'Real-time Navigation',
-                        color: AppColors.medicalBlue),
+                      icon: Icons.navigation,
+                      label: 'Real-time Navigation',
+                      color: AppColors.medicalBlue,
+                    ),
                     _FeatureRow(
-                        icon: Icons.local_hospital,
-                        label: 'Smart Hospital Matching',
-                        color: AppColors.hospitalTeal),
+                      icon: Icons.local_hospital,
+                      label: 'Smart Hospital Matching',
+                      color: AppColors.hospitalTeal,
+                    ),
                     _FeatureRow(
-                        icon: Icons.traffic,
-                        label: 'Green Corridor Management',
-                        color: AppColors.lifelineGreen),
+                      icon: Icons.traffic,
+                      label: 'Green Corridor Management',
+                      color: AppColors.lifelineGreen,
+                    ),
                     _FeatureRow(
-                        icon: Icons.monitor_heart,
-                        label: 'Live Vital Signs Sync',
-                        color: AppColors.emergencyRed),
+                      icon: Icons.monitor_heart,
+                      label: 'Live Vital Signs Sync',
+                      color: AppColors.emergencyRed,
+                    ),
                     const SizedBox(height: 24),
 
                     // Licenses
                     GestureDetector(
                       onTap: () => showLicensePage(
                         context: context,
-                        applicationName: 'LifeLine',
+                        applicationName: 'Samay Sarthi',
                         applicationVersion: '1.0.0',
                       ),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.spaceMd, vertical: 14),
+                          horizontal: AppSpacing.spaceMd,
+                          vertical: 14,
+                        ),
                         decoration: BoxDecoration(
                           color: cardColor,
                           borderRadius: AppSpacing.borderRadiusMd,
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.description_outlined,
-                                size: 22, color: AppColors.mediumGray),
+                            const Icon(
+                              Icons.description_outlined,
+                              size: 22,
+                              color: AppColors.mediumGray,
+                            ),
                             const SizedBox(width: 14),
                             Expanded(
-                              child: Text('Open-Source Licenses',
-                                  style: AppTypography.bodyS.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                      color: onSurface)),
+                              child: Text(
+                                'Open-Source Licenses',
+                                style: AppTypography.bodyS.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: onSurface,
+                                ),
+                              ),
                             ),
-                            const Icon(Icons.chevron_right,
-                                size: 20, color: AppColors.mediumGray),
+                            const Icon(
+                              Icons.chevron_right,
+                              size: 20,
+                              color: AppColors.mediumGray,
+                            ),
                           ],
                         ),
                       ),
@@ -143,8 +181,11 @@ class _FeatureRow extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color color;
-  const _FeatureRow(
-      {required this.icon, required this.label, required this.color});
+  const _FeatureRow({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -155,8 +196,7 @@ class _FeatureRow extends StatelessWidget {
         children: [
           Icon(icon, size: 20, color: color),
           const SizedBox(width: 12),
-          Text(label,
-              style: AppTypography.bodyS.copyWith(color: onSurface)),
+          Text(label, style: AppTypography.bodyS.copyWith(color: onSurface)),
         ],
       ),
     );

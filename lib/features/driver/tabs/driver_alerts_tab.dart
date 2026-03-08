@@ -37,8 +37,9 @@ class _DriverAlertsTabState extends State<DriverAlertsTab> {
   void _syncSubscription() {
     final trip = context.read<TripProvider>().activeTrip;
     final tripId = trip?.id;
-    final desiredTopic =
-        (tripId != null && trip!.status.isActive) ? '/topic/trip/$tripId' : null;
+    final desiredTopic = (tripId != null && trip!.status.isActive)
+        ? '/topic/trip/$tripId'
+        : null;
 
     if (desiredTopic == _subscribedTopic) return;
 
@@ -76,15 +77,25 @@ class _DriverAlertsTabState extends State<DriverAlertsTab> {
     }
 
     setState(() {
-      _alerts.insert(0, _AlertEntry(type: type, title: title, subtitle: subtitle, time: DateTime.now()));
+      _alerts.insert(
+        0,
+        _AlertEntry(
+          type: type,
+          title: title,
+          subtitle: subtitle,
+          time: DateTime.now(),
+        ),
+      );
     });
   }
 
   AlertType _typeForStatus(String status) {
     final s = status.toUpperCase();
     if (s.contains('CANCEL') || s.contains('FAIL')) return AlertType.emergency;
-    if (s.contains('EN_ROUTE') || s.contains('LOCKED')) return AlertType.warning;
-    if (s.contains('ARRIVED') || s.contains('COMPLETED')) return AlertType.success;
+    if (s.contains('EN_ROUTE') || s.contains('LOCKED'))
+      return AlertType.warning;
+    if (s.contains('ARRIVED') || s.contains('COMPLETED'))
+      return AlertType.success;
     return AlertType.info;
   }
 
@@ -132,8 +143,8 @@ class _DriverAlertsTabState extends State<DriverAlertsTab> {
             child: showDevAlerts
                 ? _buildDevAlerts()
                 : _alerts.isEmpty
-                    ? _buildEmptyState()
-                    : _buildRealAlerts(),
+                ? _buildEmptyState()
+                : _buildRealAlerts(),
           ),
         ],
       ),
@@ -146,16 +157,23 @@ class _DriverAlertsTabState extends State<DriverAlertsTab> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.notifications_none,
-              size: 56, color: AppColors.mediumGray.withValues(alpha: 0.4)),
+          Icon(
+            Icons.notifications_none,
+            size: 56,
+            color: AppColors.mediumGray.withValues(alpha: 0.4),
+          ),
           const SizedBox(height: 16),
-          Text('No alerts yet',
-              style: AppTypography.body
-                  .copyWith(color: onSurface.withValues(alpha: 0.6))),
+          Text(
+            'No alerts yet',
+            style: AppTypography.body.copyWith(
+              color: onSurface.withValues(alpha: 0.6),
+            ),
+          ),
           const SizedBox(height: 6),
-          Text('Alerts will appear here during active trips',
-              style: AppTypography.caption
-                  .copyWith(color: AppColors.mediumGray)),
+          Text(
+            'Alerts will appear here during active trips',
+            style: AppTypography.caption.copyWith(color: AppColors.mediumGray),
+          ),
         ],
       ),
     );
@@ -211,7 +229,7 @@ class _DriverAlertsTabState extends State<DriverAlertsTab> {
         AlertItem(
           type: AlertType.info,
           title: 'System Update Available',
-          subtitle: 'LifeLine v1.1 is available for download',
+          subtitle: 'Samay Sarthi v1.1 is available for download',
           time: '3 hr ago',
         ),
       ],

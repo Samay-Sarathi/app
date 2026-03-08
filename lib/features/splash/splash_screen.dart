@@ -29,12 +29,14 @@ class _SplashScreenState extends State<SplashScreen>
       vsync: this,
       duration: const Duration(milliseconds: 1800),
     );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
-    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+    _scaleAnimation = Tween<double>(
+      begin: 0.8,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
 
     _controller.forward();
 
@@ -105,13 +107,22 @@ class _SplashScreenState extends State<SplashScreen>
                 const LifelineLogo(size: 120),
                 const SizedBox(height: 28),
                 Text(
-                  'LIFELINE',
+                  'SAMAY SARTHI',
                   style: AppTypography.heading1.copyWith(
                     color: onSurface,
                     letterSpacing: 6,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 4),
+                Text(
+                  'समय सारथी',
+                  style: AppTypography.bodyS.copyWith(
+                    color: AppColors.mediumGray.withValues(alpha: 0.7),
+                    letterSpacing: 2,
+                  ),
+                ),
+                const SizedBox(height: 8),
                 Text(
                   'Every Second Counts',
                   style: AppTypography.bodyS.copyWith(
@@ -123,8 +134,9 @@ class _SplashScreenState extends State<SplashScreen>
                   width: 24,
                   height: 24,
                   child: CircularProgressIndicator(
-                    strokeWidth: 2.0,
+                    strokeWidth: 2.5,
                     color: AppColors.lifelineGreen,
+                    strokeCap: StrokeCap.round,
                   ),
                 ),
               ],

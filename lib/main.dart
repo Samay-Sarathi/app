@@ -23,10 +23,14 @@ void main() async {
   // before Dart's try-catch can intercept.
   if (DefaultFirebaseOptions.currentPlatform.apiKey != 'PLACEHOLDER') {
     try {
-      await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
       await NotificationService.instance.init();
     } catch (_) {
-      debugPrint('Firebase init failed. Run `flutterfire configure` to enable push notifications.');
+      debugPrint(
+        'Firebase init failed. Run `flutterfire configure` to enable push notifications.',
+      );
     }
   }
 
@@ -56,7 +60,7 @@ class LifeLineApp extends StatelessWidget {
         child: Consumer<SettingsProvider>(
           builder: (context, settings, _) {
             return MaterialApp.router(
-              title: 'LifeLine',
+              title: 'Samay Sarthi',
               debugShowCheckedModeBanner: false,
               theme: AppTheme.lightTheme,
               darkTheme: AppTheme.darkTheme,
