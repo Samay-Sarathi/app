@@ -46,4 +46,4 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H $HOST >> ~/.ssh/known_hosts 2>/dev/null
 
-          scp -i ~/.ssh/deploy_key build/app/outputs/flutter-apk/app-release.apk root@$HOST:/var/www/html/samaysarthi.apk
+          scp -i ~/.ssh/deploy_key build/app/outputs/flutter-apk/app-release.apk root@$HOST:/var/www/samaysarathi/samaysarathi.apk

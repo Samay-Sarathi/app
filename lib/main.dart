@@ -62,7 +62,7 @@ class LifeLineApp extends StatelessWidget {
         child: Consumer<SettingsProvider>(
           builder: (context, settings, _) {
             return MaterialApp.router(
-              title: 'Samay Sarthi',
+              title: 'Samay Sarathi',
               debugShowCheckedModeBanner: false,
               theme: AppTheme.lightTheme,
               darkTheme: AppTheme.darkTheme,

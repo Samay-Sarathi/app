@@ -107,7 +107,7 @@ class _SplashScreenState extends State<SplashScreen>
                 const LifelineLogo(size: 120),
                 const SizedBox(height: 28),
                 Text(
-                  'SAMAY SARTHI',
+                  'SAMAY SARATHI',
                   style: AppTypography.heading1.copyWith(
                     color: onSurface,
                     letterSpacing: 6,

@@ -8,6 +8,6 @@ void main() {
     await settings.init();
     await tester.pumpWidget(LifeLineApp(settings: settings));
     await tester.pump();
-    expect(find.text('SAMAY SARTHI'), findsOneWidget);
+    expect(find.text('SAMAY SARATHI'), findsOneWidget);
   });
 }

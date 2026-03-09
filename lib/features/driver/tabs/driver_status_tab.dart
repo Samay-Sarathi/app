@@ -96,7 +96,7 @@ class _DriverStatusTabState extends State<DriverStatusTab> {
                 ? auth.fullName
                 : 'Ambulance Driver',
             badgeStatus: BadgeStatus.active,
-            badgeLabel: 'SAMAY SARTHI',
+            badgeLabel: 'SAMAY SARATHI',
           ),
           const SizedBox(height: 16),
 

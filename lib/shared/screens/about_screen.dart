@@ -27,7 +27,7 @@ class AboutScreen extends StatelessWidget {
                     Icon(Icons.arrow_back, color: onSurface),
                     const SizedBox(width: 12),
                     Text(
-                      'About Samay Sarthi',
+                      'About Samay Sarathi',
                       style: AppTypography.heading3.copyWith(color: onSurface),
                     ),
                   ],
@@ -44,7 +44,7 @@ class AboutScreen extends StatelessWidget {
                           const LifelineLogo(size: 80),
                           const SizedBox(height: 16),
                           Text(
-                            'Samay Sarthi',
+                            'Samay Sarathi',
                             style: AppTypography.heading2.copyWith(
                               color: onSurface,
                             ),
@@ -79,11 +79,11 @@ class AboutScreen extends StatelessWidget {
                         borderRadius: AppSpacing.borderRadiusMd,
                       ),
                       child: Text(
-                        'Samay Sarthi (समय सारथी) is an intelligent emergency response '
+                        'Samay Sarathi (समय सारथी) is an intelligent emergency response '
                         'system that connects ambulance drivers, hospitals, paramedics, and '
                         'traffic police for faster, coordinated emergency care. '
                         'Using real-time GPS tracking, smart hospital matching, '
-                        'and green corridor management, Samay Sarthi aims to reduce '
+                        'and green corridor management, Samay Sarathi aims to reduce '
                         'emergency response times and save lives.',
                         style: AppTypography.bodyS.copyWith(
                           color: onSurface,
@@ -128,7 +128,7 @@ class AboutScreen extends StatelessWidget {
                     GestureDetector(
                       onTap: () => showLicensePage(
                         context: context,
-                        applicationName: 'Samay Sarthi',
+                        applicationName: 'Samay Sarathi',
                         applicationVersion: '1.0.0',
                       ),
                       child: Container(

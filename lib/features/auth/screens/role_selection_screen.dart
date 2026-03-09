@@ -37,14 +37,14 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              SvgPicture.asset(
-                'assets/icons/samaysarthi_logo.svg',
+              Image.asset(
+                'assets/icons/app_logo.png',
                 width: 72,
                 height: 72,
               ),
               const SizedBox(height: 12),
               Text(
-                'SAMAY SARTHI',
+                'SAMAY SARATHI',
                 style: GoogleFonts.poppins(
                   fontSize: 26,
                   fontWeight: FontWeight.w800,
