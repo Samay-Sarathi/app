@@ -22,9 +22,16 @@ jobs:
       - name: Setup secrets and local.properties
         run: |
           echo "GOOGLE_MAPS_API_KEY=${{ secrets.GOOGLE_MAPS_API_KEY }}" > .env
-          # Ensure local.properties has flutter.sdk and maps key
-          echo "flutter.sdk=$(which flutter | sed 's|/bin/flutter||')" > android/local.properties
+
+          # subosito/flutter-action creates local.properties with flutter.sdk + sdk.dir
+          # Just append our maps key
           echo "GOOGLE_MAPS_API_KEY=${{ secrets.GOOGLE_MAPS_API_KEY }}" >> android/local.properties
+
+          # Verify flutter.sdk is set (required by settings.gradle.kts)
+          cat android/local.properties
+
+      - name: Get dependencies
+        run: flutter pub get
 
       - name: Build APK
         run: flutter build apk --release
