@@ -247,7 +247,7 @@ class _SignInScreenState extends State<SignInScreen>
                 TextField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
-                  keyboardType: TextInputType.number,
+                  keyboardType: TextInputType.phone,
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly,
                     LengthLimitingTextInputFormatter(6),
