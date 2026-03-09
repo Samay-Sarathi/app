@@ -21,7 +21,7 @@ class WebSocketService extends ChangeNotifier {
   static String get _wsUrl {
     // e.g. http://10.0.2.2:8080/api/v1 → ws://10.0.2.2:8080/ws/websocket
     final base = AppConfig.baseUrl
-        .replaceFirst('/api/v1', '')
+        .replaceFirst(RegExp(r'/(?:api/)?v1$'), '')
         .replaceFirst('https://', 'wss://')
         .replaceFirst('http://', 'ws://');
     return '$base/ws/websocket';

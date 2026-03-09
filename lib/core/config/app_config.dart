@@ -19,7 +19,7 @@ class AppConfig {
       ? (Platform.isAndroid
           ? 'http://localhost:8080/api/v1'
           : 'http://$_devHost:8080/api/v1')
-      : 'http://142.93.210.30/api/v1';
+      : 'https://api.samaysarathi.in/v1';
 
   /// Master switch for Google Maps.
   /// Set to `true` once a real API key is in place.
