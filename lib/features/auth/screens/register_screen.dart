@@ -379,13 +379,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
         const SizedBox(height: 16),
 
-        // Password
+        // PIN
         TextFormField(
           controller: _passwordController,
           obscureText: _obscurePassword,
+          keyboardType: TextInputType.number,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(6),
+          ],
           decoration: InputDecoration(
-            labelText: 'Password',
-            hintText: 'Min 8 characters',
+            labelText: '6-Digit PIN',
+            hintText: 'Enter a 6-digit PIN',
             prefixIcon: const Icon(Icons.lock_outlined),
             suffixIcon: GestureDetector(
               onTap: () => setState(() => _obscurePassword = !_obscurePassword),
@@ -396,20 +401,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
           ),
           validator: (v) {
-            if (v == null || v.isEmpty) return 'Password is required';
-            if (v.length < 8) return 'Password must be at least 8 characters';
+            if (v == null || v.isEmpty) return 'PIN is required';
+            if (v.length != 6) return 'PIN must be exactly 6 digits';
             return null;
           },
         ),
         const SizedBox(height: 16),
 
-        // Confirm Password
+        // Confirm PIN
         TextFormField(
           controller: _confirmPasswordController,
           obscureText: _obscureConfirm,
+          keyboardType: TextInputType.number,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(6),
+          ],
           decoration: InputDecoration(
-            labelText: 'Confirm Password',
-            hintText: 'Re-enter your password',
+            labelText: 'Confirm PIN',
+            hintText: 'Re-enter your 6-digit PIN',
             prefixIcon: const Icon(Icons.lock_outlined),
             suffixIcon: GestureDetector(
               onTap: () => setState(() => _obscureConfirm = !_obscureConfirm),
@@ -420,7 +430,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
           ),
           validator: (v) {
-            if (v != _passwordController.text) return 'Passwords do not match';
+            if (v != _passwordController.text) return 'PINs do not match';
             return null;
           },
         ),

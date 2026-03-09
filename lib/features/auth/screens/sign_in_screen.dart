@@ -243,13 +243,18 @@ class _SignInScreenState extends State<SignInScreen>
                 ),
                 const SizedBox(height: 20),
 
-                // ── Password field ──
+                // ── PIN field ──
                 TextField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(6),
+                  ],
                   decoration: InputDecoration(
-                    labelText: 'Password',
-                    hintText: 'Enter your password',
+                    labelText: '6-Digit PIN',
+                    hintText: 'Enter your 6-digit PIN',
                     prefixIcon: const Icon(Icons.lock_outlined),
                     suffixIcon: GestureDetector(
                       onTap: () => setState(
