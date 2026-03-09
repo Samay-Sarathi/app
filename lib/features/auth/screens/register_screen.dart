@@ -337,7 +337,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ],
           decoration: InputDecoration(
             labelText: 'Phone Number',
-            hintText: '9999999999',
+            hintText: 'Enter 10-digit number',
             prefixIcon: Container(
               width: 52,
               alignment: Alignment.center,

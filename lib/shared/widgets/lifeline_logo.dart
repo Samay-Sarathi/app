@@ -1,9 +1,11 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 
 enum LogoVariant { filled, outlined, mono }
 
-/// Custom Shield + Pulse logo for LifeLine.
+/// Custom Clock + Pulse logo for Samay Sarthi.
+/// A clock face with heartbeat pulse running through it — "Every Second Counts".
 class LifelineLogo extends StatelessWidget {
   final double size;
   final LogoVariant variant;
@@ -36,94 +38,112 @@ class _LogoPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final w = size.width;
     final h = size.height;
+    final cx = w / 2;
+    final cy = h * 0.46;
+    final radius = w * 0.38;
 
-    // Shield path — rounded top, pointed bottom
-    final shieldPath = Path();
-    final topRadius = w * 0.22;
-
-    // Start at top-left after radius
-    shieldPath.moveTo(0, topRadius);
-    // Top-left corner
-    shieldPath.quadraticBezierTo(0, 0, topRadius, 0);
-    // Top edge
-    shieldPath.lineTo(w - topRadius, 0);
-    // Top-right corner
-    shieldPath.quadraticBezierTo(w, 0, w, topRadius);
-    // Right edge down to taper point
-    shieldPath.lineTo(w, h * 0.52);
-    // Right curve to bottom point
-    shieldPath.quadraticBezierTo(w, h * 0.68, w * 0.5, h);
-    // Left curve from bottom point
-    shieldPath.quadraticBezierTo(0, h * 0.68, 0, h * 0.52);
-    // Close back to start
-    shieldPath.close();
+    final Color primary;
+    final Color accent;
+    final Color bg;
 
     switch (variant) {
       case LogoVariant.filled:
-        // Green filled shield
-        final fillPaint = Paint()
-          ..color = AppColors.lifelineGreen
-          ..style = PaintingStyle.fill;
-        canvas.drawPath(shieldPath, fillPaint);
-        // White pulse line
-        _drawPulse(canvas, size, Colors.white);
-        break;
-
+        primary = AppColors.lifelineGreen;
+        accent = Colors.redAccent;
+        bg = AppColors.lifelineGreen.withValues(alpha: 0.1);
       case LogoVariant.outlined:
-        // Green outlined shield
-        final strokePaint = Paint()
-          ..color = AppColors.lifelineGreen
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = w * 0.045;
-        canvas.drawPath(shieldPath, strokePaint);
-        // Green pulse line
-        _drawPulse(canvas, size, AppColors.lifelineGreen);
-        break;
-
+        primary = AppColors.lifelineGreen;
+        accent = Colors.redAccent;
+        bg = Colors.transparent;
       case LogoVariant.mono:
-        // White filled shield for dark backgrounds
-        final fillPaint = Paint()
-          ..color = Colors.white
-          ..style = PaintingStyle.fill;
-        canvas.drawPath(shieldPath, fillPaint);
-        // Dark pulse line
-        _drawPulse(canvas, size, AppColors.commandDark);
-        break;
+        primary = Colors.white;
+        accent = Colors.white70;
+        bg = Colors.white12;
     }
-  }
 
-  void _drawPulse(Canvas canvas, Size size, Color color) {
-    final w = size.width;
-    final h = size.height;
-    final midY = h * 0.44;
-    final amplitude = h * 0.15;
-    final strokeW = w * 0.05;
+    // Outer circle background
+    if (bg != Colors.transparent) {
+      canvas.drawCircle(
+        Offset(cx, cy),
+        radius + w * 0.08,
+        Paint()..color = bg,
+      );
+    }
 
+    // Clock circle
+    canvas.drawCircle(
+      Offset(cx, cy),
+      radius,
+      Paint()
+        ..color = primary
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = w * 0.04,
+    );
+
+    // Hour markers (12 small ticks)
+    for (int i = 0; i < 12; i++) {
+      final angle = (i * 30 - 90) * math.pi / 180;
+      final isMain = i % 3 == 0;
+      final outerR = radius - w * 0.02;
+      final innerR = radius - (isMain ? w * 0.08 : w * 0.05);
+
+      canvas.drawLine(
+        Offset(cx + outerR * math.cos(angle), cy + outerR * math.sin(angle)),
+        Offset(cx + innerR * math.cos(angle), cy + innerR * math.sin(angle)),
+        Paint()
+          ..color = primary
+          ..strokeWidth = isMain ? w * 0.03 : w * 0.015
+          ..strokeCap = StrokeCap.round,
+      );
+    }
+
+    // Hour hand (10 o'clock position — pointing to urgency)
+    final hourAngle = (300 - 90) * math.pi / 180;
+    canvas.drawLine(
+      Offset(cx, cy),
+      Offset(cx + radius * 0.5 * math.cos(hourAngle),
+          cy + radius * 0.5 * math.sin(hourAngle)),
+      Paint()
+        ..color = primary
+        ..strokeWidth = w * 0.04
+        ..strokeCap = StrokeCap.round,
+    );
+
+    // Minute hand (12 o'clock — straight up, urgency)
+    final minAngle = (0 - 90) * math.pi / 180;
+    canvas.drawLine(
+      Offset(cx, cy),
+      Offset(cx + radius * 0.7 * math.cos(minAngle),
+          cy + radius * 0.7 * math.sin(minAngle)),
+      Paint()
+        ..color = primary
+        ..strokeWidth = w * 0.03
+        ..strokeCap = StrokeCap.round,
+    );
+
+    // Center dot
+    canvas.drawCircle(Offset(cx, cy), w * 0.03, Paint()..color = primary);
+
+    // Heartbeat pulse line across bottom
+    final pulseY = h * 0.82;
+    final pulseAmp = h * 0.08;
     final pulsePaint = Paint()
-      ..color = color
+      ..color = accent
       ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeW
+      ..strokeWidth = w * 0.035
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
 
-    final path = Path();
-    // Flat line from left
-    path.moveTo(w * 0.14, midY);
-    path.lineTo(w * 0.30, midY);
-    // Down dip
-    path.lineTo(w * 0.36, midY + amplitude * 0.4);
-    // Big spike up
-    path.lineTo(w * 0.44, midY - amplitude);
-    // Big spike down
-    path.lineTo(w * 0.52, midY + amplitude * 0.7);
-    // Recovery up
-    path.lineTo(w * 0.58, midY - amplitude * 0.3);
-    // Back to baseline
-    path.lineTo(w * 0.64, midY);
-    // Flat line to right
-    path.lineTo(w * 0.86, midY);
-
-    canvas.drawPath(path, pulsePaint);
+    final pulse = Path();
+    pulse.moveTo(w * 0.08, pulseY);
+    pulse.lineTo(w * 0.28, pulseY);
+    pulse.lineTo(w * 0.34, pulseY + pulseAmp * 0.5);
+    pulse.lineTo(w * 0.42, pulseY - pulseAmp);
+    pulse.lineTo(w * 0.50, pulseY + pulseAmp * 0.8);
+    pulse.lineTo(w * 0.56, pulseY - pulseAmp * 0.4);
+    pulse.lineTo(w * 0.62, pulseY);
+    pulse.lineTo(w * 0.92, pulseY);
+    canvas.drawPath(pulse, pulsePaint);
   }
 
   @override

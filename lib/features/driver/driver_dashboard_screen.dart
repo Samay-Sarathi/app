@@ -34,8 +34,8 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           children: const [
             DriverStatusTab(),
             DriverMapTab(),
-            DriverSettingsTab(),
             DriverAlertsTab(),
+            DriverSettingsTab(),
           ],
         ),
       ),
@@ -45,8 +45,8 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
         items: const [
           LifelineNavItem(icon: Icons.shield, label: 'Status'),
           LifelineNavItem(icon: Icons.map, label: 'Map'),
-          LifelineNavItem(icon: Icons.settings, label: 'Settings'),
           LifelineNavItem(icon: Icons.notifications, label: 'Alerts'),
+          LifelineNavItem(icon: Icons.settings, label: 'Settings'),
         ],
       ),
     );

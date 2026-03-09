@@ -6,7 +6,7 @@ class AppConfig {
   AppConfig._();
 
   // ── DEV_ONLY: Set to false for production builds ──
-  static const bool devMode = true;
+  static const bool devMode = false;
 
   /// Override the backend host IP for iOS dev builds via:
   ///   flutter run --dart-define=DEV_HOST=192.168.x.x
@@ -19,7 +19,7 @@ class AppConfig {
       ? (Platform.isAndroid
           ? 'http://localhost:8080/api/v1'
           : 'http://$_devHost:8080/api/v1')
-      : 'https://api.lifeline.app/api/v1';
+      : 'http://142.93.210.30/api/v1';
 
   /// Master switch for Google Maps.
   /// Set to `true` once a real API key is in place.

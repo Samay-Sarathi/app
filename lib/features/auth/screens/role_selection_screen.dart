@@ -38,7 +38,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
               ),
               const SizedBox(height: 8),
               SvgPicture.asset(
-                'assets/icons/lifeline_logo.svg',
+                'assets/icons/samaysarthi_logo.svg',
                 width: 72,
                 height: 72,
               ),
